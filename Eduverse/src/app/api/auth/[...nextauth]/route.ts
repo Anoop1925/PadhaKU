@@ -17,16 +17,24 @@ const authOptions: NextAuthOptions = {
             "openid",
             "email",
             "profile",
+            // Student scopes
             "https://www.googleapis.com/auth/classroom.courses.readonly",
             "https://www.googleapis.com/auth/classroom.announcements.readonly",
             "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+            // Teacher scopes - for full CRUD operations
+            "https://www.googleapis.com/auth/classroom.courses",
+            "https://www.googleapis.com/auth/classroom.coursework.students",
+            "https://www.googleapis.com/auth/classroom.rosters",
+            "https://www.googleapis.com/auth/classroom.announcements",
+            "https://www.googleapis.com/auth/classroom.topics",
+            "https://www.googleapis.com/auth/classroom.profile.emails",
           ].join(" "),
         },
       },
     }),
   ],
   pages: {
-    signIn: "/auth/signin",
+    signIn: "/sign-in",
   },
   secret: process.env.NEXTAUTH_SECRET,
 
@@ -35,7 +43,12 @@ const authOptions: NextAuthOptions = {
       // Allow all Google accounts
       return !!profile?.email;
     },
-    async redirect({ baseUrl }) {
+    async redirect({ url, baseUrl }) {
+      // Check if URL contains teacher redirect
+      if (url.includes('/teacher/dashboard')) {
+        return `${baseUrl}/teacher/dashboard`;
+      }
+      // Default to student dashboard
       return `${baseUrl}/dashboard`;
     },
     async jwt({ token, account }) {
@@ -56,4 +69,4 @@ const authOptions: NextAuthOptions = {
 };
 
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST, authOptions };

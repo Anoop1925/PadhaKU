@@ -3,16 +3,19 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { GraduationCap, BookOpen, ArrowRight, Users } from "lucide-react";
 import SharedNavbar from "@/components/SharedNavbar";
+
+type UserType = 'student' | 'teacher';
 
 export default function SignInPage() {
   const [isDark, setIsDark] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [selectedType, setSelectedType] = useState<UserType | null>(null);
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = async (userType: UserType) => {
     await signIn("google", {
-      callbackUrl: "/dashboard",
+      callbackUrl: userType === 'teacher' ? "/teacher/dashboard" : "/dashboard",
+      // Pass user type as state to identify during callback
     });
   };
 
@@ -73,113 +76,148 @@ export default function SignInPage() {
           </div>
         </div>
 
-        {/* AUTH FORM CONTAINER */}
+        {/* DUAL AUTH CONTAINER */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative z-10 w-full max-w-md"
+          className="relative z-10 w-full max-w-6xl"
         >
-          <div className="backdrop-blur-2xl bg-white/10 dark:bg-gray-900/40 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-2xl p-8 relative overflow-hidden group">
-            {/* GLOW EFFECT */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-            {/* FLOATING PARTICLES */}
-            <div className="absolute top-4 right-4 w-2 h-2 bg-white/30 rounded-full animate-ping" />
-            <div className="absolute bottom-4 left-4 w-1 h-1 bg-white/40 rounded-full animate-pulse" />
-
-            <div className="relative z-10">
-              {/* HEADER */}
-              <h1 className="text-4xl font-black text-center mb-2 bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
-                {isSignUp ? "Create Account" : "Sign In"}
+          <div className="backdrop-blur-2xl bg-white/10 dark:bg-gray-900/40 rounded-3xl border border-white/20 dark:border-gray-700/50 shadow-2xl overflow-hidden">
+            
+            {/* HEADER */}
+            <div className="text-center py-8 px-6 border-b border-white/20">
+              <h1 className="text-4xl font-black mb-2 bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
+                Welcome to PadhaKU
               </h1>
-              <p className="text-center text-gray-300 mb-6">
-                {isSignUp ? "Join thousands of learners worldwide" : "Welcome back! Continue your learning journey"}
-              </p>
+              <p className="text-gray-300">Choose how you want to sign in</p>
+            </div>
 
-              {/* GOOGLE SIGN IN BUTTON */}
-              <motion.button
-                onClick={handleGoogleAuth}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-800 py-3.5 mb-5 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold group"
+            {/* TWO-COLUMN LAYOUT */}
+            <div className="grid md:grid-cols-2 divide-x divide-white/20">
+              
+              {/* TEACHER SIDE - LEFT */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="p-8 md:p-12 relative group cursor-pointer"
+                onClick={() => setSelectedType('teacher')}
               >
-                <svg className="w-6 h-6" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="#EA4335" d="M24 9.5c3.15 0 5.75 1.1 7.66 2.89l5.7-5.7C33.39 3.21 28.98 1.5 24 1.5 14.84 1.5 7.19 7.84 4.68 16.26l6.95 5.4C13.29 14.75 18.19 9.5 24 9.5z"/>
-                  <path fill="#34A853" d="M43.63 20.26H24v7.5h11.4c-1.34 3.58-4.39 6.44-8.4 7.5l6.95 5.4C40.81 36.16 44 30.07 44 24c0-.97-.1-1.92-.27-2.84l-.1-.9z"/>
-                  <path fill="#FBBC05" d="M10.38 28.84C9.42 26.65 9 24.38 9 22c0-2.38.42-4.65 1.38-6.84L3.43 9.76C1.26 13.1 0 17.42 0 22s1.26 8.9 3.43 12.24l6.95-5.4z"/>
-                  <path fill="#4285F4" d="M24 44.5c6.56 0 12.08-2.16 16.1-5.86l-6.95-5.4c-2.13 1.43-4.86 2.26-8.15 2.26-5.81 0-10.71-5.25-12.37-12.16l-6.95 5.4C7.19 40.16 14.84 44.5 24 44.5z"/>
-                </svg>
-                <span className="flex items-center gap-2">
-                  {isSignUp ? "Sign up" : "Sign in"} with Google
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </motion.button>
-
-              <div className="flex items-center my-5">
-                <div className="flex-grow h-px bg-white/20" />
-                <span className="px-4 text-gray-400 text-sm font-medium">or continue with email</span>
-                <div className="flex-grow h-px bg-white/20" />
-              </div>
-
-              {/* EMAIL/PASSWORD FORM */}
-              <form className="space-y-4">
-                {isSignUp && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      placeholder="First name"
-                      className="px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all backdrop-blur-sm"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Last name"
-                      className="px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all backdrop-blur-sm"
-                    />
+                {/* GLOW EFFECT */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-indigo-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+                  {/* ICON */}
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <GraduationCap className="w-12 h-12 text-white" />
                   </div>
-                )}
 
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all backdrop-blur-sm"
-                />
-
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 outline-none transition-all backdrop-blur-sm"
-                />
-
-                {!isSignUp && (
-                  <div className="text-right">
-                    <a href="#" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
-                      Forgot password?
-                    </a>
+                  {/* TITLE */}
+                  <div>
+                    <h2 className="text-3xl font-bold text-white mb-2">Teacher Portal</h2>
+                    <p className="text-gray-300">Manage classrooms, assignments & analytics</p>
                   </div>
-                )}
 
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3.5 rounded-xl shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300 flex items-center justify-center gap-2 group"
-                >
-                  {isSignUp ? "Create Account" : "Sign In"}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </motion.button>
-              </form>
+                  {/* FEATURES */}
+                  <div className="space-y-3 text-left w-full">
+                    <div className="flex items-center gap-3 text-gray-200">
+                      <div className="w-2 h-2 rounded-full bg-purple-400" />
+                      <span>Create and manage classrooms</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-200">
+                      <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                      <span>Assign coursework & track progress</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-200">
+                      <div className="w-2 h-2 rounded-full bg-blue-400" />
+                      <span>View comprehensive analytics</span>
+                    </div>
+                  </div>
 
-              {/* TOGGLE SIGN IN/SIGN UP */}
-              <p className="text-center text-sm mt-6 text-gray-300">
-                {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                <button
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
-                >
-                  {isSignUp ? "Sign In" : "Sign Up"}
-                </button>
-              </p>
+                  {/* SIGN IN BUTTON */}
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoogleAuth('teacher');
+                    }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-4 rounded-2xl shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 font-semibold group/btn"
+                  >
+                    <svg className="w-6 h-6" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#EA4335" d="M24 9.5c3.15 0 5.75 1.1 7.66 2.89l5.7-5.7C33.39 3.21 28.98 1.5 24 1.5 14.84 1.5 7.19 7.84 4.68 16.26l6.95 5.4C13.29 14.75 18.19 9.5 24 9.5z"/>
+                      <path fill="#34A853" d="M43.63 20.26H24v7.5h11.4c-1.34 3.58-4.39 6.44-8.4 7.5l6.95 5.4C40.81 36.16 44 30.07 44 24c0-.97-.1-1.92-.27-2.84l-.1-.9z"/>
+                      <path fill="#FBBC05" d="M10.38 28.84C9.42 26.65 9 24.38 9 22c0-2.38.42-4.65 1.38-6.84L3.43 9.76C1.26 13.1 0 17.42 0 22s1.26 8.9 3.43 12.24l6.95-5.4z"/>
+                      <path fill="#4285F4" d="M24 44.5c6.56 0 12.08-2.16 16.1-5.86l-6.95-5.4c-2.13 1.43-4.86 2.26-8.15 2.26-5.81 0-10.71-5.25-12.37-12.16l-6.95 5.4C7.19 40.16 14.84 44.5 24 44.5z"/>
+                    </svg>
+                    <span className="flex items-center gap-2">
+                      Sign in as Teacher
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </span>
+                  </motion.button>
+                </div>
+              </motion.div>
+
+              {/* STUDENT SIDE - RIGHT */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="p-8 md:p-12 relative group cursor-pointer"
+                onClick={() => setSelectedType('student')}
+              >
+                {/* GLOW EFFECT */}
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+                  {/* ICON */}
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <BookOpen className="w-12 h-12 text-white" />
+                  </div>
+
+                  {/* TITLE */}
+                  <div>
+                    <h2 className="text-3xl font-bold text-white mb-2">Student Portal</h2>
+                    <p className="text-gray-300">Access courses, assignments & learning tools</p>
+                  </div>
+
+                  {/* FEATURES */}
+                  <div className="space-y-3 text-left w-full">
+                    <div className="flex items-center gap-3 text-gray-200">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <span>Join and view your classrooms</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-200">
+                      <div className="w-2 h-2 rounded-full bg-blue-400" />
+                      <span>Submit assignments & track grades</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-200">
+                      <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                      <span>Access AI-powered learning tools</span>
+                    </div>
+                  </div>
+
+                  {/* SIGN IN BUTTON */}
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoogleAuth('student');
+                    }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 rounded-2xl shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300 font-semibold group/btn"
+                  >
+                    <svg className="w-6 h-6" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#EA4335" d="M24 9.5c3.15 0 5.75 1.1 7.66 2.89l5.7-5.7C33.39 3.21 28.98 1.5 24 1.5 14.84 1.5 7.19 7.84 4.68 16.26l6.95 5.4C13.29 14.75 18.19 9.5 24 9.5z"/>
+                      <path fill="#34A853" d="M43.63 20.26H24v7.5h11.4c-1.34 3.58-4.39 6.44-8.4 7.5l6.95 5.4C40.81 36.16 44 30.07 44 24c0-.97-.1-1.92-.27-2.84l-.1-.9z"/>
+                      <path fill="#FBBC05" d="M10.38 28.84C9.42 26.65 9 24.38 9 22c0-2.38.42-4.65 1.38-6.84L3.43 9.76C1.26 13.1 0 17.42 0 22s1.26 8.9 3.43 12.24l6.95-5.4z"/>
+                      <path fill="#4285F4" d="M24 44.5c6.56 0 12.08-2.16 16.1-5.86l-6.95-5.4c-2.13 1.43-4.86 2.26-8.15 2.26-5.81 0-10.71-5.25-12.37-12.16l-6.95 5.4C7.19 40.16 14.84 44.5 24 44.5z"/>
+                    </svg>
+                    <span className="flex items-center gap-2">
+                      Sign in as Student
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </span>
+                  </motion.button>
+                </div>
+              </motion.div>
+
             </div>
           </div>
         </motion.div>
