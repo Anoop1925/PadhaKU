@@ -333,6 +333,7 @@ function CreateClassroomModal({
   });
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
@@ -342,6 +343,7 @@ function CreateClassroomModal({
 
     setCreating(true);
     setError(null);
+    setSuccess(null);
     
     try {
       const response = await fetch('/api/teacher/classrooms', {
@@ -357,7 +359,38 @@ function CreateClassroomModal({
         throw new Error(data.details || data.error || 'Failed to create classroom');
       }
 
-      onSuccess();
+      // Check if manual activation is required
+      if (data.requiresManualActivation && data.activationUrl) {
+        setSuccess('Course created! Opening Google Classroom to activate...');
+        
+        // Open Google Classroom in new tab
+        window.open(data.activationUrl, '_blank');
+        
+        // Show instruction message
+        setTimeout(() => {
+          setSuccess('Please activate the course in the opened tab, then this page will refresh automatically.');
+        }, 2000);
+        
+        // Auto-refresh after 8 seconds to show the new course
+        setTimeout(() => {
+          onSuccess();
+        }, 8000);
+        
+        return;
+      }
+
+      // Show success message
+      setSuccess(data.message || 'Classroom created successfully!');
+      
+      // If it requires activation, show that info too
+      if (data.requiresActivation) {
+        setSuccess('Classroom created! Note: It was automatically activated and is ready to use.');
+      }
+      
+      // Close modal and refresh after 2 seconds
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
     } catch (error) {
       console.error('Error creating classroom:', error);
       setError(error instanceof Error ? error.message : 'Failed to create classroom');
@@ -372,6 +405,21 @@ function CreateClassroomModal({
         <h2 className="text-2xl font-bold text-slate-800 mb-6">
           Create New Classroom
         </h2>
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-green-700 text-sm font-medium">{success}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">

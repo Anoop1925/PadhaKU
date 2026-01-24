@@ -9,7 +9,7 @@ const BASE_URL = 'https://classroom.googleapis.com/v1';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function GET(
       );
     }
 
-    const courseId = params.id;
+    const { id: courseId } = await params;
     const accessToken = session.accessToken as string;
 
     // Fetch all data in parallel

@@ -44,7 +44,7 @@ generation_config = {
     "max_output_tokens": 8192,
 }
 
-model = genai.GenerativeModel('gemini-2.5-flash', generation_config=generation_config)
+model = genai.GenerativeModel('gemini-2.5-flash-lite', generation_config=generation_config)
 
 def clean_transcript_text(text):
     """Strips music cues and filler words, then truncates."""
@@ -123,7 +123,7 @@ def root():
 @app.route('/health')
 def health():
     """Health check endpoint"""
-    return jsonify({"status": "healthy", "model": "gemini-2.5-flash"})
+    return jsonify({"status": "healthy", "model": "gemini-2.5-flash-lite"})
 
 @app.route('/generate', methods=['POST'])
 def generate():
