@@ -15,7 +15,6 @@ import io
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import google.generativeai as genai
-from groq import Groq
 from mediapipe.python.solutions import hands, drawing_utils
 from dotenv import load_dotenv
 import threading
@@ -30,8 +29,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# API KEY CONFIGURATION - Groq Llama Scout for DrawInAir, Gemini for others
-DRAWINAIR_API_KEY = os.getenv('GROQ_LLAMA_SCOUT_API_KEY')
+# API KEY CONFIGURATION - Gemini for all features
+DRAWINAIR_API_KEY = os.getenv('DRAWINAIR_API_KEY')
 IMAGE_READER_API_KEYS = [
     os.getenv('IMAGE_READER_API_KEY'),
     os.getenv('IMAGE_READER_API_KEY_2'),
@@ -54,12 +53,9 @@ current_plot_crafter_key_idx = 0
 if not DRAWINAIR_API_KEY or not IMAGE_READER_API_KEYS or not PLOT_CRAFTER_API_KEYS:
     raise ValueError("API keys required for all features. Add keys to .env file.")
 
-print(f"✅ Loaded Groq Llama Scout API key for DrawInAir")
+print(f"✅ Loaded Gemini API key for DrawInAir")
 print(f"✅ Loaded {len(IMAGE_READER_API_KEYS)} Image Reader API keys (Gemini)")
 print(f"✅ Loaded {len(PLOT_CRAFTER_API_KEYS)} Plot Crafter API keys (Gemini)")
-
-# Initialize Groq client for DrawInAir
-groq_client = Groq(api_key=DRAWINAIR_API_KEY)
 
 # Global variables for DrawInAir
 camera = None
@@ -680,21 +676,26 @@ def analyze_drawing():
         if ',' in image_data:
             image_data = image_data.split(',')[1]
         
-        # Convert base64 to data URL for Groq API
-        image_url = f"data:image/png;base64,{image_data}"
+        image_bytes = base64.b64decode(image_data)
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            return jsonify({'success': False, 'error': 'Failed to decode image'}), 400
+        
+        # Convert to PIL Image
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(img_rgb)
         
         try:
-            print(f"🔑 Using Groq Llama Scout API for DrawInAir vision analysis")
+            # Configure Gemini API
+            genai.configure(api_key=DRAWINAIR_API_KEY)
             
-            # Analyze with Groq Llama Scout vision model
-            chat_completion = groq_client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": """Analyze the image and provide the following:
+            print(f"🔑 Using Gemini 2.5 Flash Lite for DrawInAir vision analysis")
+            
+            # Analyze with Gemini 2.5 Flash Lite
+            model = genai.GenerativeModel(model_name='gemini-2.5-flash-lite')
+            prompt = """Analyze the image and provide the following:
 * If a mathematical equation is present:
    - The equation represented in the image.
    - The solution to the equation.
@@ -702,33 +703,18 @@ def analyze_drawing():
 * If a drawing is present and no equation is detected:
    - A brief description of the drawn image in simple terms.
 * If only a single text is present in the image, then just return the text only show the text only."""
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": image_url
-                                }
-                            }
-                        ]
-                    }
-                ],
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
-                temperature=1,
-                max_completion_tokens=1024,
-                top_p=1,
-                stream=False
-            )
             
-            analysis_result = chat_completion.choices[0].message.content
+            response = model.generate_content([prompt, pil_image])
+            analysis_result = response.text
             
             return jsonify({
                 'success': True,
                 'result': analysis_result,
-                'model_used': 'Llama Scout (Groq)'
+                'model_used': 'Gemini 2.5 Flash Lite'
             })
             
         except Exception as e:
-            print(f"❌ Groq Llama Scout API error: {e}")
+            print(f"❌ Gemini API error: {e}")
             return jsonify({
                 'success': False,
                 'error': f'Analysis failed: {str(e)}'
