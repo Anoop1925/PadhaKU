@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { User, Megaphone, BookOpen, ClipboardList, Hand, GraduationCap, CheckCircle2, Clock, Bell, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trophy } from "lucide-react"; // Icon imports
+import { User, Megaphone, BookOpen, ClipboardList, Hand, GraduationCap, CheckCircle2, Clock, Bell, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trophy, BarChart3 } from "lucide-react"; // Icon imports
 import { addDays, format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday } from 'date-fns';
 
 interface Course {
@@ -542,7 +542,18 @@ export default function Dashboard() {
                   </div>
                 </div>
                 
-                <div className="mt-auto pt-3 border-t border-slate-200">
+                {/* View Analytics Button */}
+                <div className="mt-3">
+                  <button
+                    onClick={() => router.push('/analytics')}
+                    className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    View Analytics
+                  </button>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-slate-200">
                   <div className="text-center">
                     <div className="text-xs text-slate-500 mb-1">Today</div>
                     <div className="text-sm font-medium text-slate-700">{format(new Date(), 'EEEE, dd MMMM')}</div>
