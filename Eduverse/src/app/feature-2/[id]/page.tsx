@@ -1,15 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { BookOpen, Video, CheckCircle, MoreVertical } from "lucide-react"; // Updated icons
+import { BookOpen, Video, CheckCircle, MoreVertical, Trophy, Play, Lock } from "lucide-react";
 import { Course, Subtopic } from "@/types/feature-2";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"; // Assuming shadcn dropdown components
+} from "@/components/ui/dropdown-menu";
+
+interface ChapterProgress {
+  chapter_index: number;
+  is_completed: boolean;
+  chapter_score: number;
+}
 
 // Helper function to convert YouTube URL to embed format
 function getYouTubeEmbedUrl(url: string): string {
@@ -135,10 +142,12 @@ function TopicReelModal({ open, onClose, subtopics, initialIndex }: { open: bool
 export default function CourseDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [course, setCourse] = useState<Course | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [activeSubtopic, setActiveSubtopic] = useState<{ subtopics: Subtopic[]; index: number } | null>(null);
   const [completedChapters, setCompletedChapters] = useState<Set<number>>(new Set());
+  const [chapterScores, setChapterScores] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -159,6 +168,36 @@ export default function CourseDetailsPage() {
     if (id) fetchCourse();
   }, [id]);
 
+  // Fetch user progress for this course
+  useEffect(() => {
+    async function fetchProgress() {
+      if (!course?.id || !session?.user?.email) return;
+      
+      try {
+        const res = await fetch(`/api/quiz/submit?courseId=${course.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          const completed = new Set<number>();
+          const scores = new Map<number, number>();
+          
+          (data.progress || []).forEach((p: ChapterProgress) => {
+            if (p.is_completed) {
+              completed.add(p.chapter_index);
+              scores.set(p.chapter_index, p.chapter_score);
+            }
+          });
+          
+          setCompletedChapters(completed);
+          setChapterScores(scores);
+        }
+      } catch (err) {
+        console.error("Failed to fetch progress:", err);
+      }
+    }
+    
+    fetchProgress();
+  }, [course?.id, session?.user?.email]);
+
   const handleToggle = (idx: number) => {
     setExpanded(expanded === idx ? null : idx);
   };
@@ -173,10 +212,6 @@ export default function CourseDetailsPage() {
     });
     setDeleting(false);
     router.push("/feature-2");
-  };
-
-  const handleMarkCompleted = (idx: number) => {
-    setCompletedChapters((prev) => new Set([...prev, idx]));
   };
 
   if (loading) return <div className="p-10 text-center text-gray-700 animate-pulse">Loading course...</div>;
@@ -240,8 +275,16 @@ export default function CourseDetailsPage() {
                   <div className={`w-10 h-10 flex items-center justify-center rounded-full font-semibold text-lg ${completedChapters.has(idx) ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
                     {idx + 1}
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{ch.chapterName}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">{ch.chapterName}</h3>
+                      {completedChapters.has(idx) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                          <Trophy size={12} />
+                          {chapterScores.get(idx) || 0}/10
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">Duration: {ch.duration}</p>
                   </div>
                 </div>
@@ -271,13 +314,39 @@ export default function CourseDetailsPage() {
                       </button>
                     ))}
                   </div>
-                  <button
-                    className={`w-full md:w-auto px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${completedChapters.has(idx) ? "bg-green-600 text-white cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:scale-105"}`}
-                    onClick={() => handleMarkCompleted(idx)}
-                    disabled={completedChapters.has(idx)}
-                  >
-                    {completedChapters.has(idx) ? "✓ Completed" : "Mark as Completed"}
-                  </button>
+                  
+                  {/* Quiz Button */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {completedChapters.has(idx) ? (
+                      <div className="flex items-center gap-3 px-6 py-3 bg-green-100 rounded-lg">
+                        <Trophy className="text-green-600" size={20} />
+                        <div>
+                          <p className="font-semibold text-green-700">Quiz Completed!</p>
+                          <p className="text-sm text-green-600">Score: {chapterScores.get(idx) || 0}/10 points</p>
+                        </div>
+                      </div>
+                    ) : idx === 0 || completedChapters.has(idx - 1) ? (
+                      <button
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Use cid for URL navigation (cid is the public URL identifier)
+                          router.push(`/course/${course.cid}/chapter/${idx}/quiz`);
+                        }}
+                      >
+                        <Play size={18} />
+                        Take Quiz
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-3 px-6 py-3 bg-gray-100 rounded-lg border border-gray-200">
+                        <Lock className="text-gray-400" size={20} />
+                        <div>
+                          <p className="font-semibold text-gray-500">Quiz Locked</p>
+                          <p className="text-sm text-gray-400">Complete Chapter {idx} first</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

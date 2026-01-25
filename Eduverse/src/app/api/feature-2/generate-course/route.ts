@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { getJson } from 'serpapi';
+import OpenAI from 'openai';
+
+// Initialize Groq client (using OpenAI SDK with Groq base URL)
+const groqClient = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
+});
 
 // Interface for playlist-based course structure
 interface PlaylistVideo {
@@ -438,42 +445,45 @@ Level: ${level}
 Include Video: ${includeVideo}
 Number of Chapters: ${noOfChapters}`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
-      );
+      // Use Groq API for course generation
+      const response = await groqClient.chat.completions.create({
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful course generator. Always respond with valid JSON only, no markdown formatting or code blocks."
+          },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+      });
 
-      if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status}`);
-      }
+      const text = response.choices[0]?.message?.content || "";
 
-      const result = await response.json();
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if (!text) throw new Error("No response from Groq");
 
-      if (!text) throw new Error("No response from Gemini");
-
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      // Extract JSON from response (remove any markdown code blocks if present)
+      const cleanText = text
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
+      
+      const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.error("Failed to extract JSON from Gemini response:", text);
-        throw new Error("Gemini response was not valid JSON");
+        console.error("Failed to extract JSON from Groq response:", text);
+        throw new Error("Groq response was not valid JSON");
       }
 
       try {
         courseData = JSON.parse(jsonMatch[0]);
       } catch (e) {
         console.error("Failed to parse extracted JSON:", e, jsonMatch[0]);
-        throw new Error("Gemini response was not valid JSON (after extraction)");
+        throw new Error("Groq response was not valid JSON (after extraction)");
       }
 
       if (!courseData.course || !courseData.course.chapters || courseData.course.chapters.length !== noOfChapters) {
-        console.error("Gemini response was not valid JSON or extractable:", text);
+        console.error("Groq response was not valid JSON or extractable:", text);
         throw new Error("Invalid course structure or chapter count mismatch");
       }
 
