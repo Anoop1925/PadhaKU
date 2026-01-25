@@ -139,7 +139,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content - with left margin to account for fixed sidebar */}
-      <main className="flex-1 ml-[280px] lg:ml-[280px]">{children}</main>
+      <main className="flex-1ml-[280px] lg:ml-[280px]">{children}</main>
     </div>
   );
 } 
