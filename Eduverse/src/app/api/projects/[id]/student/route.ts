@@ -50,12 +50,20 @@ export async function GET(
 
     if (milestonesError) throw milestonesError;
 
-    // Get group's submissions
+    // Get group's submissions with evaluations
     const { data: submissions, error: submissionsError } = await supabase
       .from('milestone_submissions')
       .select(`
-        *,
+        id,
+        milestone_id,
+        group_id,
+        submitted_by,
+        submission_type,
+        submission_data,
+        submission_notes,
+        submitted_at,
         milestone_evaluations (
+          id,
           marks_awarded,
           feedback,
           approved,
@@ -64,9 +72,21 @@ export async function GET(
       `)
       .eq('group_id', projectData.group_id);
 
-    if (submissionsError) throw submissionsError;
+    if (submissionsError) {
+      console.error('Error fetching submissions:', submissionsError);
+      throw submissionsError;
+    }
 
     console.log('Total submissions for group:', submissions?.length || 0);
+    
+    // Debug: Log all submissions with their evaluations
+    submissions?.forEach((sub: any) => {
+      console.log(`Submission ${sub.id} for milestone ${sub.milestone_id}:`, {
+        hasEvaluation: !!sub.milestone_evaluations?.[0],
+        approved: sub.milestone_evaluations?.[0]?.approved,
+        marks: sub.milestone_evaluations?.[0]?.marks_awarded
+      });
+    });
 
     // Build milestones with status using simple sequential logic
     const milestonesWithStatus = allMilestones?.map((milestone, index) => {
@@ -76,10 +96,10 @@ export async function GET(
       let status: "locked" | "active" | "submitted" | "approved" = "locked";
 
       // Check if this milestone has been approved
-      if (evaluation && evaluation.approved) {
+      if (evaluation && evaluation.approved === true) {
         status = "approved";
       } 
-      // Check if this milestone has been submitted but not yet evaluated
+      // Check if this milestone has been submitted but not yet evaluated or not approved
       else if (submission) {
         status = "submitted";
       } 
@@ -94,12 +114,12 @@ export async function GET(
         const prevEvaluation = prevSubmission?.milestone_evaluations?.[0];
         
         // Unlock if previous milestone is approved
-        if (prevEvaluation && prevEvaluation.approved) {
+        if (prevEvaluation && prevEvaluation.approved === true) {
           status = "active";
         }
       }
 
-      console.log(`Milestone ${milestone.sequence_order} (${milestone.title}): status=${status}, has_submission=${!!submission}, has_evaluation=${!!evaluation}`);
+      console.log(`Milestone ${milestone.sequence_order} (${milestone.title}): status=${status}, has_submission=${!!submission}, has_evaluation=${!!evaluation}, approved=${evaluation?.approved}`);
 
       return {
         ...milestone,
@@ -108,7 +128,7 @@ export async function GET(
           id: submission.id,
           submission_type: submission.submission_type,
           submission_data: submission.submission_data,
-          notes: submission.notes,
+          notes: submission.submission_notes,
           submitted_at: submission.submitted_at
         } : undefined,
         evaluation: evaluation ? {

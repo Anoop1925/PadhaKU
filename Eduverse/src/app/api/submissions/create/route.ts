@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         submitted_by,
         submission_type,
         submission_data,
-        notes: notes || null
+        submission_notes: notes || null
       })
       .select()
       .single();

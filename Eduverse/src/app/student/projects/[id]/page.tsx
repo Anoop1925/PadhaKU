@@ -63,7 +63,12 @@ export default function StudentProjectDetailPage() {
 
   const fetchProjectData = async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}/student?email=${session?.user?.email}`);
+      const res = await fetch(`/api/projects/${projectId}/student?email=${session?.user?.email}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setProject(data.project);
