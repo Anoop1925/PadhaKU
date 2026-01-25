@@ -42,27 +42,25 @@ interface AnalyticsData {
   };
 }
 
-export default function AnalyticsPage() {
-  const { data: session } = useSession();
+export default function ParentAnalyticsPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (session === null) {
-      router.push("/sign-in");
-    }
-  }, [session, router]);
+  // Middleware handles all authentication and verification checks
+  // No need for redirect logic here
 
   useEffect(() => {
-    if (!session?.user?.email) return;
+    // Use student email from parent session instead of parent email
+    if (!session?.parentStudentEmail) return;
 
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const email = session.user?.email || '';
+        const studentEmail = session.parentStudentEmail || '';
         
-        const response = await fetch(`/api/analytics/summary?userEmail=${encodeURIComponent(email)}`);
+        const response = await fetch(`/api/analytics/summary?userEmail=${encodeURIComponent(studentEmail)}`);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -100,8 +98,8 @@ export default function AnalyticsPage() {
             totalChaptersCompleted: 0,
           },
           recommendation: {
-            action: 'Start your learning journey',
-            reason: 'Begin with a course to start earning points and tracking your progress.',
+            action: 'Start learning',
+            reason: 'No data available yet',
             suggestedCourse: null,
           },
         });
@@ -111,14 +109,25 @@ export default function AnalyticsPage() {
     };
 
     fetchAnalytics();
-  }, [session]);
+  }, [session?.parentStudentEmail]);
 
-  if (loading || !analytics) {
+  // Show loading state
+  if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#fafbfc]">
+      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#444fd6] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your analytics...</p>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">No analytics data available</p>
         </div>
       </div>
     );
@@ -148,9 +157,6 @@ export default function AnalyticsPage() {
       value: Math.max(0, Math.min(100, course.completionRate)), // Ensure value is between 0-100
       fullMark: 100,
     }));
-    
-    // If we have less than 5 courses, don't pad - just show what we have
-    // Radar chart will adjust automatically
   } else {
     // Fallback: use default categories if no course data available
     const defaultCategories = ["Math", "Science", "Logic", "Language", "Arts"];
@@ -162,11 +168,8 @@ export default function AnalyticsPage() {
   }
 
   // Prepare radial chart data for consistency pulse - multiple concentric arcs
-  // Create data for a semi-circular radial bar chart with multiple segments
   const consistencyValue = currentStatus.consistency || 75;
-  // Create 7 segments representing different time periods
   const consistencyData = Array.from({ length: 7 }, (_, i) => {
-    // Each segment represents a week, with decreasing values for outer rings
     const weekValue = Math.max(0, consistencyValue - (i * 10));
     return {
       name: `week-${i}`,
@@ -189,7 +192,7 @@ export default function AnalyticsPage() {
     },
   };
 
-  // Format recommendation for Next Adventure card - use actual data from API
+  // Format recommendation for Next Adventure card
   const nextAdventureText = recommendation.suggestedCourse || recommendation.action || "Start Learning";
   const nextAdventureChapter = recommendation.action 
     ? recommendation.action.includes("Chapter") 
@@ -207,9 +210,9 @@ export default function AnalyticsPage() {
               <BarChart3 className="w-8 h-8 text-[#444fd6]" />
             </div>
             <div>
-              <div className="text-xl font-bold text-white">My Growth Story</div>
+              <div className="text-xl font-bold text-white">Student Analytics</div>
               <div className="text-base text-white/80">
-                Track your journey and visualize your learning patterns.
+                Viewing analytics for: <span className="font-semibold">{session?.parentStudentEmail}</span>
               </div>
             </div>
           </div>
@@ -255,7 +258,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-3xl font-bold text-slate-800 mb-1">
-                  {currentStatus.streak || 0}
+                  {currentStatus.streak}
                 </div>
                 <div className="text-sm font-medium text-slate-600">Day Streak</div>
               </div>
@@ -270,7 +273,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-3xl font-bold text-slate-800 mb-1">
-                  {currentStatus.consistency || 0}%
+                  {currentStatus.consistency}%
                 </div>
                 <div className="text-sm font-medium text-slate-600">Consistency</div>
               </div>
@@ -281,56 +284,34 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Charts & Next Action Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Knowledge Signature - Radar Chart (Left, 2 columns) */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+        {/* Charts Row - 2 Columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Knowledge Signature - Radar Chart */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#d0dffc] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[#c8d9f5] flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-[#444fd6]" />
               </div>
               <h2 className="text-xl font-semibold text-slate-800">Knowledge Signature</h2>
             </div>
-            <ChartContainer
-              config={radarConfig}
-              className="mx-auto aspect-square h-[350px]"
-            >
+            <ChartContainer config={radarConfig} className="h-[300px]">
               <RadarChart data={radarData}>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="line" />}
-                />
-                <PolarGrid 
-                  gridType="circle" 
-                  stroke="#e5e7eb"
-                  strokeWidth={1}
-                />
-                <PolarAngleAxis 
-                  dataKey="category" 
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
-                  tickLine={false}
-                />
-                <PolarRadiusAxis 
-                  angle={90} 
-                  domain={[0, 100]}
-                  tick={false}
-                  axisLine={false}
-                />
+                <PolarGrid />
+                <PolarAngleAxis dataKey="category" tick={{ fontSize: 12 }} />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
                 <Radar
-                  name="Knowledge"
+                  name="Completion"
                   dataKey="value"
                   stroke="#60a5fa"
                   fill="#60a5fa"
                   fillOpacity={0.4}
-                  strokeWidth={2}
-                  dot={{ fill: '#60a5fa', r: 4 }}
                 />
               </RadarChart>
             </ChartContainer>
           </div>
 
-          {/* Right Column - Consistency Pulse & Next Adventure (Stacked) */}
-          <div className="flex flex-col gap-8">
+          {/* Right Column - Consistency Pulse & Next Adventure */}
+          <div className="space-y-8">
             {/* Consistency Pulse - Radial Chart */}
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <div className="flex items-center gap-3 mb-6">
@@ -339,29 +320,17 @@ export default function AnalyticsPage() {
                 </div>
                 <h2 className="text-xl font-semibold text-slate-800">Consistency Pulse</h2>
               </div>
-              <ChartContainer
-                config={radialConfig}
-                className="mx-auto aspect-square h-[200px]"
-              >
+              <ChartContainer config={radialConfig} className="h-[200px]">
                 <RadialBarChart
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="40%"
+                  outerRadius="80%"
                   data={consistencyData}
                   startAngle={180}
                   endAngle={0}
-                  innerRadius={25}
-                  outerRadius={85}
                 >
-                  <PolarGrid
-                    gridType="circle"
-                    radialLines={true}
-                    stroke="#e5e7eb"
-                    strokeWidth={0.5}
-                  />
-                  <RadialBar
-                    dataKey="value"
-                    cornerRadius={3}
-                    fill="#22c55e"
-                    background={{ fill: '#f3f4f6' }}
-                  />
+                  <RadialBar dataKey="value" cornerRadius={4} />
                 </RadialBarChart>
               </ChartContainer>
             </div>
@@ -379,13 +348,6 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-slate-600 mb-1">Resume: {nextAdventureText}</p>
                   <p className="text-sm font-medium text-slate-800">{nextAdventureChapter}</p>
                 </div>
-                <button
-                  onClick={() => router.push('/feature-2')}
-                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                >
-                  Continue Chapter
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             </div>
           </div>

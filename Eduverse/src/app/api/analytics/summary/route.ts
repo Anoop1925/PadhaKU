@@ -97,9 +97,12 @@ export async function GET(req: NextRequest) {
     }
     console.log('Total courses count:', allCourses?.length || 0);
 
-    // Filter user's courses
-    const userCourses = allCourses?.filter(c => c.userEmail === userEmail) || [];
-    console.log('User courses count:', userCourses.length);
+  // Get courses the user is actually taking (has progress in)
+  const userCourseIds = new Set(userProgress?.map(p => p.course_id) || []);
+  const userCourses = allCourses?.filter(c => userCourseIds.has(c.id)) || [];
+  console.log('User courses (with progress) count:', userCourses.length);
+  console.log('User course IDs:', Array.from(userCourseIds));
+  console.log('Sample course data:', userCourses[0]);
 
     // Create a map of course_id to course data
     const coursesMap = new Map();
@@ -281,55 +284,76 @@ function getLast30DaysTrend(history: any[]) {
 }
 
 function analyzeCategories(progress: any[], courses: any[]) {
-  const categoryMap = new Map<string, { completed: number; total: number; started: number }>();
+  // Use course names for radar chart instead of categories
+  // Group progress by course name
+  const courseMap = new Map<number, any>();
+  courses.forEach(c => courseMap.set(c.id, c));
 
-  // Group progress by category
+  const courseStatsMap = new Map<string, { completed: number; total: number; started: number; courseName: string }>();
+
+  // First, initialize all courses the user has progress in
+  const uniqueCourseIds = new Set(progress.map(p => p.course_id));
+  uniqueCourseIds.forEach(courseId => {
+    const course = courseMap.get(courseId);
+    if (course) {
+      const courseName = course.name || 'Uncategorized';
+      if (!courseStatsMap.has(courseName)) {
+        courseStatsMap.set(courseName, { 
+          completed: 0, 
+          total: course.noOfChapters || course.noofchapters || 0, // Handle both camelCase and lowercase
+          started: 0,
+          courseName 
+        });
+      }
+    }
+  });
+
+  // Group progress by course and calculate stats
   progress.forEach(p => {
-    const course = p.courses;
+    const course = courseMap.get(p.course_id);
     if (!course) return;
 
-    const category = course.category || 'Uncategorized';
-    if (!categoryMap.has(category)) {
-      categoryMap.set(category, { completed: 0, total: 0, started: 0 });
+    const courseName = course.name || 'Uncategorized';
+    if (!courseStatsMap.has(courseName)) {
+      // Shouldn't happen, but handle it
+      courseStatsMap.set(courseName, { 
+        completed: 0, 
+        total: course.noOfChapters || course.noofchapters || 0,
+        started: 0,
+        courseName 
+      });
     }
 
-    const stats = categoryMap.get(category)!;
+    const stats = courseStatsMap.get(courseName)!;
     stats.started++;
     if (p.is_completed) {
       stats.completed++;
     }
   });
 
-  // Add total chapters from courses
-  courses.forEach(course => {
-    const category = course.category || 'Uncategorized';
-    if (categoryMap.has(category)) {
-      const stats = categoryMap.get(category)!;
-      stats.total += course.noOfChapters || 0;
-    }
-  });
-
-  const categories = Array.from(categoryMap.entries()).map(([category, stats]) => ({
-    category,
-    completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
-    chaptersCompleted: stats.completed,
-    chaptersStarted: stats.started,
-  }));
+  const categories = Array.from(courseStatsMap.entries())
+    .filter(([_, stats]) => stats.started > 0) // Only courses with actual progress
+    .map(([courseName, stats]) => ({
+      category: courseName, // Use course name for radar chart
+      completionRate: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0,
+      chaptersCompleted: stats.completed,
+      chaptersStarted: stats.started,
+    }))
+    .sort((a, b) => b.completionRate - a.completionRate); // Sort by completion rate
 
   const strongCategories = categories
     .filter(c => c.completionRate >= 50)
-    .sort((a, b) => b.completionRate - a.completionRate)
-    .slice(0, 3);
+    .slice(0, 5); // Top 5 for radar chart
 
   const weakCategories = categories
-    .filter(c => c.completionRate < 50 && c.chaptersStarted > 0)
-    .sort((a, b) => a.completionRate - b.completionRate)
+    .filter(c => c.completionRate < 50)
     .slice(0, 3);
 
   return { strongCategories, weakCategories };
 }
 
 function calculateEngagement(history: any[], courses: any[], coursesCompleted: number, chaptersCompleted: number) {
+  // Calculate unique active days from points history
   const uniqueDays = new Set(history.map(h => new Date(h.earned_at).toDateString())).size;
   const totalPoints = history.reduce((sum, h) => sum + h.points_earned, 0);
   const averagePointsPerDay = uniqueDays > 0 ? Math.round(totalPoints / uniqueDays) : 0;
@@ -344,7 +368,8 @@ function calculateEngagement(history: any[], courses: any[], coursesCompleted: n
   const mostProductiveDay = Array.from(dayPoints.entries())
     .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
-  const coursesStarted = new Set(courses.map(c => c.id)).size;
+  // Count unique courses the user has progress in
+  const coursesStarted = courses.length;
 
   return {
     totalActiveDays: uniqueDays,
