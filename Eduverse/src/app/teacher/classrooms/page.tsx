@@ -153,35 +153,35 @@ export default function ClassroomsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6 bg-[#fafbfc] min-h-screen">
+    <div className="p-6 space-y-5 bg-[#fafbfc] min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+          <h1 className="text-2xl font-bold text-slate-800 mb-1">
             My Classrooms
           </h1>
-          <p className="text-slate-600">
+          <p className="text-sm text-slate-600">
             Manage all your classes in one place
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all shadow-lg hover:shadow-xl font-semibold"
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg font-semibold text-sm"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           Create Classroom
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Search classrooms..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
       </div>
 
@@ -206,99 +206,99 @@ export default function ClassroomsPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClassrooms.map((classroom, index) => (
             <div
               key={classroom.id}
               onClick={() => router.push(`/teacher/classrooms/${classroom.id}`)}
-              className="group cursor-pointer bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-slate-100 hover:border-blue-200 hover:scale-[1.02]"
+              className="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-slate-200 hover:border-blue-200 hover:scale-[1.02]"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* Colorful Header with Pattern */}
-              <div className={`h-40 bg-gradient-to-br ${classroom.color} relative overflow-hidden`}>
+              <div className={`h-24 bg-gradient-to-br ${classroom.color} relative overflow-hidden`}>
                 {/* Decorative Pattern */}
-                <div className="absolute inset-0 opacity-20">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white rounded-full -translate-y-10 translate-x-10"></div>
+                  <div className="absolute bottom-0 left-0 w-16 h-16 bg-white rounded-full translate-y-8 -translate-x-8"></div>
                 </div>
                 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
                 
                 {/* Action Buttons */}
-                <div className="absolute top-4 right-4 flex gap-2">
+                <div className="absolute top-2 right-2 flex gap-1.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       window.open(classroom.alternateLink, '_blank');
                     }}
-                    className="p-2.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md transition-all hover:scale-110 shadow-lg"
+                    className="p-2 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all hover:scale-105 shadow-sm"
                     title="Open in Google Classroom"
                   >
-                    <ExternalLink className="w-4 h-4 text-white" />
+                    <ExternalLink className="w-3.5 h-3.5 text-white" />
                   </button>
                 </div>
                 
                 {/* Course Info */}
-                <div className="absolute bottom-5 left-5 right-5">
-                  <h3 className="text-2xl font-bold text-white mb-1 drop-shadow-lg line-clamp-1">
+                <div className="absolute bottom-3 left-3 right-3">
+                  <h3 className="text-base font-bold text-white mb-0.5 drop-shadow-md line-clamp-1">
                     {classroom.name}
                   </h3>
-                  <p className="text-white/95 text-sm font-medium drop-shadow">
+                  <p className="text-white/90 text-xs font-medium drop-shadow">
                     {classroom.section || 'No section'}
                   </p>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-4">
+              <div className="p-3 space-y-2.5">
                 {/* Enrollment Code */}
                 {classroom.enrollmentCode && (
-                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4 border border-blue-100">
+                  <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 p-2.5 border border-blue-100">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
                           Class Code
                         </span>
-                        <div className="font-mono font-bold text-blue-600 text-xl tracking-wider mt-1">
+                        <div className="font-mono font-bold text-blue-600 text-base tracking-wide mt-0.5">
                           {classroom.enrollmentCode}
                         </div>
                       </div>
                       <button
                         onClick={(e) => copyEnrollmentCode(classroom.enrollmentCode, e)}
-                        className="p-3 hover:bg-blue-100 rounded-xl transition-all hover:scale-110 group/copy"
+                        className="p-2 hover:bg-blue-100 rounded-lg transition-all hover:scale-105 group/copy"
                         title="Copy code"
                       >
-                        <Copy className="w-5 h-5 text-blue-600 group-hover/copy:text-blue-700" />
+                        <Copy className="w-4 h-4 text-blue-600 group-hover/copy:text-blue-700" />
                       </button>
                     </div>
                   </div>
                 )}
 
                 {/* Stats */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl flex-1">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Users className="w-4 h-4 text-blue-600" />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-lg flex-1">
+                    <div className="p-1.5 bg-blue-100 rounded-md">
+                      <Users className="w-3.5 h-3.5 text-blue-600" />
                     </div>
                     <div>
-                      <div className="text-xs text-slate-500 font-medium">Students</div>
-                      <div className="text-lg font-bold text-slate-800">{classroom.studentCount}</div>
+                      <div className="text-[10px] text-slate-500 font-medium">Students</div>
+                      <div className="text-base font-bold text-slate-800">{classroom.studentCount}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* View Classroom Button */}
-                <div className="pt-2">
-                  <div className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold text-sm group-hover:from-blue-600 group-hover:to-indigo-600 transition-all shadow-md group-hover:shadow-lg">
-                    <BookOpen className="w-4 h-4" />
+                <div className="pt-1">
+                  <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-semibold text-xs group-hover:from-blue-600 group-hover:to-indigo-600 transition-all shadow-sm group-hover:shadow-md">
+                    <BookOpen className="w-3.5 h-3.5" />
                     <span>Open Classroom</span>
                   </div>
                 </div>
               </div>
 
               {/* Bottom Accent */}
-              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+              <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
             </div>
           ))}
         </div>
