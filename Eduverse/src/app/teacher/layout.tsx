@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { LayoutDashboard, BookOpen, TestTube, BarChart3, FileText, LogOut } from "lucide-react";
+import { LayoutDashboard, BookOpen, TestTube, BarChart3, FileText, LogOut, FolderKanban } from "lucide-react";
 import { ReactNode, useState } from "react";
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {
@@ -19,6 +19,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   const navLinks = [
     { label: "Dashboard", route: "/teacher/dashboard", icon: LayoutDashboard },
     { label: "Classrooms", route: "/teacher/classrooms", icon: BookOpen },
+    { label: "Projects", route: "/teacher/projects", icon: FolderKanban },
     { label: "Tests", route: "/teacher/tests", icon: TestTube },
     { label: "Analytics Report", route: "/teacher/analytics", icon: BarChart3 },
     { label: "Reports", route: "/teacher/reports", icon: FileText },
