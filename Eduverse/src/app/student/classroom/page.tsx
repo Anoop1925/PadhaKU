@@ -192,14 +192,15 @@ export default function StudentClassroomPage() {
   const [searchQuery, setSearchQuery] = useState("");
   
   const classroomColors = [
-    "from-red-400 to-pink-500",
-    "from-yellow-400 to-orange-500",
+    "from-pink-400 to-red-500",
+    "from-orange-400 to-yellow-400",
     "from-green-400 to-emerald-500",
-    "from-blue-400 to-cyan-500",
-    "from-purple-400 to-indigo-500",
+    "from-blue-400 to-cyan-400",
+    "from-purple-400 to-indigo-400",
     "from-pink-400 to-rose-500",
-    "from-teal-400 to-green-500",
+    "from-green-400 to-emerald-400",
     "from-orange-400 to-red-500",
+    "from-pink-400 to-red-500",
   ];
 
   const filteredCourses = courses.filter((course) =>
@@ -617,41 +618,45 @@ export default function StudentClassroomPage() {
 
   if (!selectedCourse) {
     return (
-      <div className="p-6 space-y-5 bg-[#fafbfc] min-h-screen">
+      <div className="px-8 py-8 bg-[#fafbfc] min-h-screen">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-1">
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">
               My Classrooms
             </h1>
             <p className="text-sm text-slate-600">
               View assignments, announcements, and course materials
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 shadow-sm">
-            <GraduationCap className="w-4 h-4 text-blue-500" />
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide">Total Classes</p>
-              <p className="text-base font-bold text-slate-800">{courses.length}</p>
+          <div className="px-6 py-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#444fd6] flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-0.5">TOTAL CLASSES</p>
+                <p className="text-2xl font-bold text-slate-800">{courses.length}</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             type="text"
             placeholder="Search classrooms..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+            className="w-full pl-10 pr-4 py-3 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
           />
         </div>
         
         {filteredCourses.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-16">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col items-center justify-center py-16">
               <BookOpen className="h-20 w-20 text-slate-300 mb-4" />
               <h2 className="text-xl font-semibold text-slate-700 mb-2">
                 {searchQuery ? "No classrooms found" : "No classrooms yet"}
@@ -661,48 +666,43 @@ export default function StudentClassroomPage() {
                   ? "Try adjusting your search" 
                   : "You haven't joined any classrooms. Contact your teacher to get a class code."}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl">
             {filteredCourses.map((course, index) => (
               <div
                 key={course.id}
                 onClick={() => setSelectedCourse(course)}
                 className="group cursor-pointer"
               >
-                <Card className="h-full hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border border-slate-200 overflow-hidden">
-                  <div className={`h-24 bg-gradient-to-br ${classroomColors[index % classroomColors.length]} p-4 relative`}>
-                    <div className="relative z-10">
-                      <h3 className="text-white font-semibold text-base mb-0.5 line-clamp-2">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 overflow-hidden h-full flex flex-col">
+                  {/* Color Header - Smaller height at top */}
+                  <div className={`h-14 bg-gradient-to-br ${classroomColors[index % classroomColors.length]} relative`}>
+                    <BookOpen className="absolute bottom-2 right-3 w-7 h-7 text-white/15" />
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex-1 mb-3">
+                      <h3 className="text-base font-semibold text-slate-800 mb-1.5 line-clamp-2 group-hover:text-[#444fd6] transition-colors">
                         {course.name}
                       </h3>
                       {course.section && (
-                        <p className="text-white/90 text-xs font-medium">
+                        <p className="text-sm text-slate-600">
                           {course.section}
                         </p>
                       )}
                     </div>
-                    <BookOpen className="absolute bottom-2 right-2 w-8 h-8 text-white/10" />
-                  </div>
-                  <CardContent className="p-3">
-                    {course.room && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 mb-2">
-                        <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Room: {course.room}</span>
-                      </div>
-                    )}
-                    {course.descriptionHeading && (
-                      <p className="text-xs text-slate-500 line-clamp-2 mb-2">
-                        {course.descriptionHeading}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-1.5 text-blue-600 font-medium text-xs group-hover:gap-2 transition-all">
+                    
+                    {/* Open Classroom Link */}
+                    <div className="flex items-center gap-2 text-[#444fd6] font-medium text-sm pt-3 border-t border-slate-100 group-hover:gap-2.5 transition-all">
+                      <ExternalLink className="w-4 h-4 flex-shrink-0" />
                       <span>Open Classroom</span>
-                      <ArrowLeft className="w-4 h-4 rotate-180" />
+                      <ArrowLeft className="w-4 h-4 rotate-180 ml-auto flex-shrink-0" />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -713,355 +713,429 @@ export default function StudentClassroomPage() {
 
   // Classroom detail view with tabs
   return (
-    <div className="p-6 space-y-5 bg-[#fafbfc] min-h-screen">
-      {/* Back Button */}
-      <Button
-        variant="ghost"
-        onClick={() => setSelectedCourse(null)}
-        className="hover:bg-slate-100 h-9 text-sm"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Classrooms
-      </Button>
+    <div className="min-h-screen bg-[#fafbfc]">
+      {/* ========== HEADER SECTION ========== */}
+      <header className="bg-white border-b-2 border-slate-200 shadow-sm">
+        <div className="px-8 py-6">
+          {/* Back Navigation */}
+          <button
+            onClick={() => setSelectedCourse(null)}
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-6 transition-colors group font-medium"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            Back to Classrooms
+          </button>
 
-      {/* Classroom Header */}
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{selectedCourse.name}</h1>
+          {/* Course Title & Info */}
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-slate-900 mb-3">
+                {selectedCourse.name}
+              </h1>
+              <div className="flex items-center flex-wrap gap-3">
                 {selectedCourse.section && (
-                  <p className="text-blue-100 text-sm mt-0.5">{selectedCourse.section}</p>
+                  <span className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium border border-blue-200">
+                    <BookOpen className="w-4 h-4" />
+                    {selectedCourse.section}
+                  </span>
+                )}
+                {selectedCourse.room && (
+                  <span className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-medium border border-purple-200">
+                    <GraduationCap className="w-4 h-4" />
+                    Room {selectedCourse.room}
+                  </span>
                 )}
               </div>
             </div>
-            {selectedCourse.room && (
-              <p className="text-xs text-blue-100 ml-13">Room: {selectedCourse.room}</p>
-            )}
           </div>
-          <div className="flex gap-2">
-            <div className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-center">
-              <p className="text-[10px] text-blue-100 uppercase tracking-wide mb-0.5">Teachers</p>
-              <p className="text-xl font-bold">{teachers.length}</p>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4 max-w-md">
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-all">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-full -translate-y-10 translate-x-10"></div>
+              <div className="relative flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-white/80 text-sm font-medium mb-1">Teachers</p>
+                  <p className="text-3xl font-bold">{teachers.length}</p>
+                </div>
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+              </div>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-center">
-              <p className="text-[10px] text-blue-100 uppercase tracking-wide mb-0.5">Students</p>
-              <p className="text-xl font-bold">{students.length}</p>
+            <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg hover:shadow-xl transition-all">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white opacity-10 rounded-full -translate-y-10 translate-x-10"></div>
+              <div className="relative flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-white/80 text-sm font-medium mb-1">Students</p>
+                  <p className="text-3xl font-bold">{students.length}</p>
+                </div>
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                  <Users className="w-6 h-6" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "stream" | "classwork" | "people")} className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm">
-          <TabsTrigger 
-            value="stream" 
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-6 py-2.5 font-medium text-sm transition-all"
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Stream
-          </TabsTrigger>
-          <TabsTrigger 
-            value="classwork"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-6 py-2.5 font-medium text-sm transition-all"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Classwork
-          </TabsTrigger>
-          <TabsTrigger 
-            value="people"
-            className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg px-6 py-2.5 font-medium text-sm transition-all"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            People
-          </TabsTrigger>
-        </TabsList>
+        {/* Tab Navigation */}
+        <div className="px-8 -mb-0.5">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'stream', label: 'Stream', icon: MessageSquare, count: announcements.length },
+              { id: 'classwork', label: 'Classwork', icon: FileText, count: courseWork.length },
+              { id: 'people', label: 'People', icon: Users, count: students.length },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`relative flex items-center gap-3 px-6 py-4 font-semibold transition-all rounded-t-xl ${
+                    isActive
+                      ? 'bg-[#fafbfc] text-blue-600'
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-base">{tab.label}</span>
+                  {tab.count !== undefined && tab.count > 0 && (
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      isActive 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-t-full"></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </header>
 
-        {/* Stream Tab */}
-        <TabsContent value="stream" className="space-y-6">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-            </div>
-          ) : (
-            <>
-              {/* Announcements */}
-              {announcements.map((announcement) => (
-                <Card key={announcement.id} className="border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-pink-500 flex items-center justify-center flex-shrink-0">
-                        <Megaphone className="w-5 h-5 text-white" />
+      {/* ========== CONTENT AREA ========== */}
+      <main className="px-8 py-8">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "stream" | "classwork" | "people")} className="space-y-6">
+
+          {/* Stream Tab */}
+          <TabsContent value="stream" className="space-y-6">
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="max-w-6xl mx-auto space-y-4">
+                {/* Announcements */}
+                {announcements.map((announcement) => (
+                  <article 
+                    key={announcement.id} 
+                    className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-6 hover:shadow-md hover:border-blue-200 transition-all group"
+                  >
+                    <div className="flex items-start gap-5">
+                      <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl group-hover:scale-105 transition-transform flex-shrink-0">
+                        <Megaphone className="w-6 h-6 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Badge variant="secondary" className="bg-pink-50 text-pink-700 border-pink-200 text-xs px-2 py-0.5">
-                            Announcement
-                          </Badge>
-                          <span className="text-xs text-slate-500">
-                            {new Date(announcement.creationTime).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </span>
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="font-semibold text-slate-800 mb-1">Class Announcement</h3>
+                            <div className="flex items-center gap-3 text-sm text-slate-500">
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="w-4 h-4" />
+                                {new Date(announcement.creationTime).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                              <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                Announcement
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-700 leading-relaxed">{announcement.text}</p>
+                        <p className="text-slate-700 leading-relaxed whitespace-pre-wrap mb-3">{announcement.text}</p>
                         {renderMaterials(announcement.materials)}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </article>
+                ))}
 
-              {/* Assignments */}
-              {courseWork.map((work) => {
-                const statusBadge = work.submissionState ? getStatusBadge(work.submissionState) : null;
-                
-                return (
-                  <Card
-                    key={work.id}
-                    className="border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                    onClick={() => handleAssignmentClick(work)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-white" />
+                {/* Assignments */}
+                {courseWork.map((work) => {
+                  const statusBadge = work.submissionState ? getStatusBadge(work.submissionState) : null;
+                  
+                  return (
+                    <article
+                      key={work.id}
+                      onClick={() => handleAssignmentClick(work)}
+                      className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all group cursor-pointer"
+                    >
+                      <div className="flex items-start gap-5">
+                        <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl group-hover:scale-105 transition-transform flex-shrink-0">
+                          <FileText className="w-6 h-6 text-indigo-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <h3 className="text-base font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                              {work.title}
-                            </h3>
-                            {statusBadge && (
-                              <Badge className={`text-xs px-2 py-0.5 ${statusBadge.className}`}>
-                                {statusBadge.text}
-                              </Badge>
-                            )}
-                            {work.maxPoints && (
-                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs font-medium px-2 py-0.5 ml-auto flex-shrink-0">
-                                {work.maxPoints} pts
-                              </Badge>
-                            )}
-                          </div>
-                          {work.dueDate && (
-                            <div className="flex items-center gap-1.5 text-xs mb-1.5">
-                              <Clock className="w-4 h-4 text-orange-500" />
-                              <span className={work.isDue ? 'text-red-600 font-medium' : 'text-slate-600'}>
-                                Due: {formatDate(work.dueDate, work.dueTime)}
-                                {work.isLate && ' (Late)'}
-                              </span>
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors mb-2">
+                                {work.title}
+                              </h3>
+                              {work.description && (
+                                <p className="text-slate-600 text-sm line-clamp-2 mb-2">{work.description}</p>
+                              )}
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {work.dueDate && (
+                                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                                    work.isDue 
+                                      ? 'bg-red-50 text-red-700' 
+                                      : 'bg-slate-50 text-slate-700'
+                                  }`}>
+                                    <Clock className="w-3.5 h-3.5" />
+                                    <span>
+                                      {work.isDue ? 'Overdue' : `Due: ${formatDate(work.dueDate, work.dueTime)}`}
+                                      {work.isLate && ' (Late)'}
+                                    </span>
+                                  </div>
+                                )}
+                                {statusBadge && (
+                                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge.className}`}>
+                                    {statusBadge.text}
+                                  </span>
+                                )}
+                                {work.maxPoints && (
+                                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                                    <span className="text-xs font-semibold text-blue-700">{work.maxPoints} pts</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                          {work.description && (
-                            <p className="text-xs text-slate-600 line-clamp-2 mb-1.5">
-                              {work.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1.5 text-blue-600 font-medium text-xs group-hover:gap-2 transition-all">
+                          </div>
+                          <div className="flex items-center gap-2 text-blue-600 font-medium text-sm mt-3 pt-3 border-t border-slate-100 group-hover:gap-3 transition-all">
                             <span>View Assignment</span>
-                            <ArrowLeft className="w-3.5 h-3.5 rotate-180" />
+                            <ArrowLeft className="w-4 h-4 rotate-180" />
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                    </article>
+                  );
+                })}
 
-              {announcements.length === 0 && courseWork.length === 0 && (
-                <Card className="border-0 shadow-md">
-                  <CardContent className="flex flex-col items-center justify-center py-16">
-                    <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                      <MessageSquare className="h-10 w-10 text-slate-400" />
+                {announcements.length === 0 && courseWork.length === 0 && (
+                  <div className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 py-20 text-center">
+                    <div className="p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                      <MessageSquare className="w-12 h-12 text-blue-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-700 mb-2">No posts yet</h3>
-                    <p className="text-slate-500">Check back later for announcements and assignments</p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-        </TabsContent>
+                    <h3 className="text-2xl font-bold text-slate-800 mb-3">No posts yet</h3>
+                    <p className="text-slate-600 text-lg">Check back later for announcements and assignments</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
 
-        {/* Classwork Tab */}
-        <TabsContent value="classwork" className="space-y-6">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-            </div>
-          ) : courseWork.length === 0 ? (
-            <Card className="border-0 shadow-md">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                  <FileText className="h-10 w-10 text-slate-400" />
+          {/* Classwork Tab */}
+          <TabsContent value="classwork" className="space-y-6">
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+              </div>
+            ) : courseWork.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 py-20 text-center">
+                <div className="p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                  <FileText className="w-12 h-12 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-700 mb-2">No classwork yet</h3>
-                <p className="text-slate-500">Assignments will appear here when posted</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {courseWork.map((work) => {
-                const statusBadge = work.submissionState ? getStatusBadge(work.submissionState) : null;
-                const showGrade = work.submissionState === 'RETURNED' && work.submission?.assignedGrade !== undefined;
-                
-                return (
-                  <Card key={work.id} className="border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-base font-semibold text-slate-900">{work.title}</h3>
-                              {statusBadge && (
-                                <Badge className={`text-xs px-2 py-0.5 ${statusBadge.className}`}>
-                                  {statusBadge.text}
-                                </Badge>
+                <h3 className="text-2xl font-bold text-slate-800 mb-3">No classwork yet</h3>
+                <p className="text-slate-600 text-lg">Assignments will appear here when posted</p>
+              </div>
+            ) : (
+              <div className="max-w-7xl mx-auto space-y-4">
+                {courseWork.map((work) => {
+                  const statusBadge = work.submissionState ? getStatusBadge(work.submissionState) : null;
+                  const showGrade = work.submissionState === 'RETURNED' && work.submission?.assignedGrade !== undefined;
+                  
+                  return (
+                    <article
+                      key={work.id}
+                      onClick={() => handleAssignmentClick(work)}
+                      className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-5 hover:shadow-lg hover:border-blue-200 transition-all group cursor-pointer"
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-4">
+                          {/* Left: Icon + Title & Description */}
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl group-hover:scale-105 transition-transform flex-shrink-0">
+                              <FileText className="w-6 h-6 text-indigo-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors mb-1 truncate">
+                                {work.title}
+                              </h3>
+                              {work.description && (
+                                <p className="text-slate-600 text-sm line-clamp-1">{work.description}</p>
                               )}
                             </div>
+                          </div>
+
+                          {/* Right: Status, Due Date, Points - Horizontal */}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {/* Status Badge */}
+                            {statusBadge && (
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge.className}`}>
+                                {statusBadge.text}
+                              </span>
+                            )}
+
+                            {/* Due Date */}
                             {work.dueDate && (
-                              <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span className={work.isDue ? 'text-red-600 font-medium' : ''}>
-                                  Due: {formatDate(work.dueDate, work.dueTime)}
+                              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                                work.isDue 
+                                  ? 'bg-red-50 text-red-700' 
+                                  : 'bg-slate-50 text-slate-700'
+                              }`}>
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="whitespace-nowrap">
+                                  {work.isDue ? 'Overdue' : `Due: ${formatDate(work.dueDate, work.dueTime)}`}
                                   {work.isLate && ' (Late)'}
                                 </span>
                               </div>
                             )}
+
+                            {/* Points */}
+                            {work.maxPoints !== undefined && (
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                                <span className="text-xs font-semibold text-blue-700">{work.maxPoints} pts</span>
+                              </div>
+                            )}
+
+                            {/* Grade if returned */}
                             {showGrade && (
-                              <div className="flex items-center gap-1.5 text-xs font-medium text-green-700 mt-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>
-                                  Grade: {work.submission?.assignedGrade}/{work.maxPoints} pts
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-lg">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                                <span className="text-xs font-semibold text-green-700">
+                                  {work.submission?.assignedGrade}/{work.maxPoints}
                                 </span>
                               </div>
                             )}
                           </div>
                         </div>
-                        {work.maxPoints && !showGrade && (
-                          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs font-medium px-2 py-0.5 flex-shrink-0">
-                            {work.maxPoints} pts
-                          </Badge>
-                        )}
-                      </div>
-                      {work.description && (
-                        <p className="text-xs text-slate-600 mb-2 line-clamp-2">{work.description}</p>
-                      )}
-                      {renderMaterials(work.materials)}
-                      <Button 
-                        onClick={() => handleAssignmentClick(work)}
-                        className="w-full mt-2 bg-blue-600 hover:bg-blue-700 h-9 text-sm"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        {showGrade ? 'View Grade' : work.submissionState === 'TURNED_IN' ? 'View Submission' : 'Open Assignment'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
 
-        {/* People Tab */}
-        <TabsContent value="people" className="space-y-6">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Teachers */}
-              <Card className="border-0 shadow-md">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
+                        {/* Materials */}
+                        {work.materials && work.materials.length > 0 && (
+                          <div className="space-y-2 pl-16">
+                            {renderMaterials(work.materials)}
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        <div className="pl-16 pt-2">
+                          <button className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-semibold text-sm transition-all shadow-sm hover:shadow-md">
+                            {showGrade ? 'View Grade' : work.submissionState === 'TURNED_IN' ? 'View Submission' : 'Open Assignment'}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* People Tab */}
+          <TabsContent value="people" className="space-y-6">
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6">
+                {/* Teachers */}
+                <div className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-6">
+                  <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center">
                       <GraduationCap className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-lg">Teachers</CardTitle>
+                      <h3 className="text-lg font-bold text-slate-800">Teachers</h3>
                       <p className="text-sm text-slate-500">{teachers.length} instructor{teachers.length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {teachers.map((teacher) => (
-                    <div
-                      key={teacher.userId}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                    >
-                      <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
-                        <AvatarImage src={teacher.profile.photoUrl} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-indigo-500 text-white font-semibold">
-                          {teacher.profile.name.givenName[0]}
-                          {teacher.profile.name.familyName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-800 truncate">
-                          {teacher.profile.name.fullName}
-                        </p>
-                        <p className="text-sm text-slate-500 truncate">
-                          {teacher.profile.emailAddress}
-                        </p>
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {teachers.map((teacher) => (
+                      <div
+                        key={teacher.userId}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                      >
+                        <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
+                          <AvatarImage src={teacher.profile.photoUrl} />
+                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-indigo-500 text-white font-semibold">
+                            {teacher.profile.name.givenName[0]}
+                            {teacher.profile.name.familyName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-800 truncate">
+                            {teacher.profile.name.fullName}
+                          </p>
+                          <p className="text-sm text-slate-500 truncate">
+                            {teacher.profile.emailAddress}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Students */}
-              <Card className="border-0 shadow-md">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
+                {/* Students */}
+                <div className="bg-white rounded-2xl shadow-sm border-2 border-slate-200 p-6">
+                  <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
                       <Users className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-lg">Classmates</CardTitle>
+                      <h3 className="text-lg font-bold text-slate-800">Classmates</h3>
                       <p className="text-sm text-slate-500">{students.length} student{students.length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {students.map((student) => (
-                    <div
-                      key={student.userId}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                    >
-                      <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
-                        <AvatarImage src={student.profile.photoUrl} />
-                        <AvatarFallback className="bg-gradient-to-br from-green-400 to-emerald-500 text-white font-semibold">
-                          {student.profile.name.givenName[0]}
-                          {student.profile.name.familyName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-800 truncate">
-                          {student.profile.name.fullName}
-                        </p>
-                        <p className="text-sm text-slate-500 truncate">
-                          {student.profile.emailAddress}
-                        </p>
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {students.map((student) => (
+                      <div
+                        key={student.userId}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                      >
+                        <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
+                          <AvatarImage src={student.profile.photoUrl} />
+                          <AvatarFallback className="bg-gradient-to-br from-green-400 to-emerald-500 text-white font-semibold">
+                            {student.profile.name.givenName[0]}
+                            {student.profile.name.familyName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-800 truncate">
+                            {student.profile.name.fullName}
+                          </p>
+                          <p className="text-sm text-slate-500 truncate">
+                            {student.profile.emailAddress}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </main>
 
       {/* Assignment Submission Dialog - Google Classroom Flow */}
       <Dialog
