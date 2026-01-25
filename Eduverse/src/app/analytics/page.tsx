@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Trophy, Flame, Award, Activity, ArrowRight, BookOpen, 
-  TrendingUp, Calendar, Zap, CheckCircle2, Library, BarChart3
+  TrendingUp, Calendar, Zap, CheckCircle2, Library, BarChart3, ChevronDown
 } from "lucide-react";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBarChart, RadialBar } from "recharts";
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 interface AnalyticsData {
@@ -40,6 +40,20 @@ interface AnalyticsData {
     reason: string;
     suggestedCourse: string | null;
   };
+  chapterWiseMarks: {
+    chapterIndex: number;
+    chapterName: string;
+    score: number;
+    courseName: string;
+    courseId: number;
+    completedAt: string;
+  }[];
+  userCourses: {
+    id: number;
+    title: string;
+    chaptersCompleted: number;
+    totalChapters: number;
+  }[];
 }
 
 export default function AnalyticsPage() {
@@ -47,6 +61,7 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedCourse, setSelectedCourse] = useState<string>("all");
 
   useEffect(() => {
     if (session === null) {
@@ -104,6 +119,8 @@ export default function AnalyticsPage() {
             reason: 'Begin with a course to start earning points and tracking your progress.',
             suggestedCourse: null,
           },
+          chapterWiseMarks: [],
+          userCourses: [],
         });
       } finally {
         setLoading(false);
@@ -126,54 +143,64 @@ export default function AnalyticsPage() {
 
   const { currentStatus, strengthsAndWeaknesses, engagementSummary, recommendation } = analytics;
 
-  // Prepare radar chart data for knowledge signature - use actual course data from API
-  // Get all courses with progress (strong + weak categories combined)
-  const allCoursesWithProgress = [
-    ...strengthsAndWeaknesses.strongCategories,
-    ...strengthsAndWeaknesses.weakCategories
-  ];
-
-  // Remove duplicates by category name
-  const uniqueCourses = Array.from(
-    new Map(allCoursesWithProgress.map(c => [c.category, c])).values()
-  );
-
-  // If we have course data, use it; otherwise use default categories
-  let radarData;
-  if (uniqueCourses.length > 0) {
-    // Use actual course names from the database (up to 5 courses for radar chart)
-    const coursesForRadar = uniqueCourses.slice(0, 5);
-    radarData = coursesForRadar.map(course => ({
-      category: course.category.length > 20 ? course.category.substring(0, 20) + '...' : course.category,
-      value: Math.max(0, Math.min(100, course.completionRate)), // Ensure value is between 0-100
-      fullMark: 100,
-    }));
-    
-    // If we have less than 5 courses, don't pad - just show what we have
-    // Radar chart will adjust automatically
-  } else {
-    // Fallback: use default categories if no course data available
-    const defaultCategories = ["Math", "Science", "Logic", "Language", "Arts"];
-    radarData = defaultCategories.map(category => ({
-      category,
-      value: 0,
-      fullMark: 100,
-    }));
+  // Prepare radar chart data using userCourses from API
+  // Calculate completion rate for each course
+  let radarData: { category: string; fullName: string; value: number; fullMark: number; chaptersCompleted: number; totalChapters: number }[] = [];
+  
+  if (analytics.userCourses && analytics.userCourses.length > 0) {
+    // Use all enrolled courses (up to 6 for radar chart readability)
+    const coursesForRadar = analytics.userCourses.slice(0, 6);
+    radarData = coursesForRadar.map(course => {
+      const completionRate = course.totalChapters > 0 
+        ? Math.round((course.chaptersCompleted / course.totalChapters) * 100) 
+        : 0;
+      const courseName = course.title || 'Untitled';
+      return {
+        category: courseName.length > 12 ? courseName.substring(0, 12) + '...' : courseName,
+        fullName: course.title || 'Untitled Course',
+        value: Math.max(0, Math.min(100, completionRate)),
+        fullMark: 100,
+        chaptersCompleted: course.chaptersCompleted || 0,
+        totalChapters: course.totalChapters || 0,
+      };
+    });
+  }
+  
+  // Radar chart needs at least 3 points - pad with empty if needed
+  if (radarData.length < 3) {
+    const defaultCategories = ["Course 1", "Course 2", "Course 3"];
+    while (radarData.length < 3) {
+      radarData.push({
+        category: defaultCategories[radarData.length] || `Course ${radarData.length + 1}`,
+        fullName: 'No course yet',
+        value: 0,
+        fullMark: 100,
+        chaptersCompleted: 0,
+        totalChapters: 0,
+      });
+    }
   }
 
-  // Prepare radial chart data for consistency pulse - multiple concentric arcs
-  // Create data for a semi-circular radial bar chart with multiple segments
-  const consistencyValue = currentStatus.consistency || 75;
-  // Create 7 segments representing different time periods
-  const consistencyData = Array.from({ length: 7 }, (_, i) => {
-    // Each segment represents a week, with decreasing values for outer rings
-    const weekValue = Math.max(0, consistencyValue - (i * 10));
-    return {
-      name: `week-${i}`,
-      value: weekValue,
-      fill: "#22c55e", // Green
-    };
-  });
+  // Get courses for dropdown - use userCourses from API (all enrolled courses)
+  const coursesForFilter = analytics.userCourses?.map(c => ({ 
+    id: c.id, 
+    name: c.title || 'Unnamed Course',
+    chaptersCompleted: c.chaptersCompleted,
+    totalChapters: c.totalChapters
+  })) || [];
+
+  // Filter and prepare chapter-wise marks data for line chart
+  const filteredMarks = selectedCourse === "all" 
+    ? analytics.chapterWiseMarks 
+    : analytics.chapterWiseMarks.filter(m => m.courseId.toString() === selectedCourse);
+
+  const chapterMarksData = filteredMarks.map((mark, index) => ({
+    name: selectedCourse === "all" ? `Quiz ${index + 1}` : `Ch ${mark.chapterIndex + 1}`,
+    score: mark.score,
+    fullName: mark.chapterName,
+    course: mark.courseName,
+    chapterNum: mark.chapterIndex + 1,
+  }));
 
   const radarConfig = {
     value: {
@@ -182,10 +209,10 @@ export default function AnalyticsPage() {
     },
   };
 
-  const radialConfig = {
-    consistency: {
-      label: "Consistency",
-      color: "#22c55e", // Green
+  const lineChartConfig = {
+    score: {
+      label: "Score",
+      color: "#8b5cf6", // Purple
     },
   };
 
@@ -281,24 +308,43 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Charts & Next Action Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Knowledge Signature - Radar Chart (Left, 2 columns) */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+        {/* Charts Section - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Knowledge Signature - Radar Chart */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-[#d0dffc] flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-[#444fd6]" />
               </div>
-              <h2 className="text-xl font-semibold text-slate-800">Knowledge Signature</h2>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-800">Course Progress</h2>
+                <p className="text-sm text-slate-500">Completion rate across your courses</p>
+              </div>
             </div>
             <ChartContainer
               config={radarConfig}
               className="mx-auto aspect-square h-[350px]"
             >
               <RadarChart data={radarData}>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="line" />}
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-200">
+                          <p className="font-semibold text-slate-800 mb-1">{data.fullName}</p>
+                          <p className="text-sm text-slate-500 mb-2">
+                            {data.chaptersCompleted}/{data.totalChapters} chapters completed
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <p className="text-sm font-bold text-blue-600">{data.value}% Complete</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <PolarGrid 
                   gridType="circle" 
@@ -329,65 +375,116 @@ export default function AnalyticsPage() {
             </ChartContainer>
           </div>
 
-          {/* Right Column - Consistency Pulse & Next Adventure (Stacked) */}
-          <div className="flex flex-col gap-8">
-            {/* Consistency Pulse - Radial Chart */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-[#c8f0dc] flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-[#10b981]" />
+          {/* Chapter-wise Marks - Line Chart */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#e9d5ff] flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-[#8b5cf6]" />
                 </div>
-                <h2 className="text-xl font-semibold text-slate-800">Consistency Pulse</h2>
-              </div>
-              <ChartContainer
-                config={radialConfig}
-                className="mx-auto aspect-square h-[200px]"
-              >
-                <RadialBarChart
-                  data={consistencyData}
-                  startAngle={180}
-                  endAngle={0}
-                  innerRadius={25}
-                  outerRadius={85}
-                >
-                  <PolarGrid
-                    gridType="circle"
-                    radialLines={true}
-                    stroke="#e5e7eb"
-                    strokeWidth={0.5}
-                  />
-                  <RadialBar
-                    dataKey="value"
-                    cornerRadius={3}
-                    fill="#22c55e"
-                    background={{ fill: '#f3f4f6' }}
-                  />
-                </RadialBarChart>
-              </ChartContainer>
-            </div>
-
-            {/* Next Adventure Card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-[#c8d9f5] flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-[#444fd6]" />
-                </div>
-                <h2 className="text-xl font-semibold text-slate-800">Next Adventure</h2>
-              </div>
-              <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-slate-600 mb-1">Resume: {nextAdventureText}</p>
-                  <p className="text-sm font-medium text-slate-800">{nextAdventureChapter}</p>
+                  <h2 className="text-xl font-semibold text-slate-800">Chapter-wise Marks</h2>
+                  <p className="text-sm text-slate-500">Your quiz performance across chapters</p>
                 </div>
-                <button
-                  onClick={() => router.push('/feature-2')}
-                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                >
-                  Continue Chapter
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              </div>
+              {/* Course Filter Dropdown */}
+              {coursesForFilter.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
+                  >
+                    <option value="all">All Courses</option>
+                    {coursesForFilter.map((course) => (
+                      <option key={course.id} value={course.id.toString()}>
+                        {course.name && course.name.length > 25 ? course.name.substring(0, 25) + '...' : course.name || 'Unnamed Course'}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                </div>
+              )}
+            </div>
+            {chapterMarksData.length > 0 ? (
+              <ChartContainer
+                config={lineChartConfig}
+                className="h-[300px] w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chapterMarksData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis 
+                      domain={[0, 10]} 
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      ticks={[0, 2, 4, 6, 8, 10]}
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-200">
+                              <p className="font-semibold text-slate-800 mb-1">{data.fullName}</p>
+                              <p className="text-sm text-slate-500 mb-2">{data.course}</p>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                                <p className="text-sm font-bold text-purple-600">Score: {data.score}/10</p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="score" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={3}
+                      dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 5, stroke: '#fff' }}
+                      activeDot={{ r: 8, fill: '#7c3aed', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            ) : (
+              <div className="h-[300px] flex flex-col items-center justify-center text-slate-500">
+                <BarChart3 className="w-12 h-12 text-slate-300 mb-3" />
+                <p className="text-center font-medium">No quiz data yet</p>
+                <p className="text-sm text-slate-400">Complete quizzes to see your marks!</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Next Adventure Card - Full Width */}
+        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl p-6 mb-8 shadow-lg">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                <BookOpen className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Continue Your Journey</h2>
+                <p className="text-white/80 text-sm">{nextAdventureText}</p>
               </div>
             </div>
+            <button
+              onClick={() => router.push('/feature-2')}
+              className="bg-white hover:bg-slate-100 text-indigo-600 font-semibold py-3 px-6 rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+            >
+              Continue Learning
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
 

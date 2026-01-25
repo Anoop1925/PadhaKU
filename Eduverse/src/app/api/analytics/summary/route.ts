@@ -4,6 +4,15 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+interface ChapterMark {
+  chapterIndex: number;
+  chapterName: string;
+  score: number;
+  courseName: string;
+  courseId: number;
+  completedAt: string;
+}
+
 interface AnalyticsSummary {
   currentStatus: {
     level: number;
@@ -34,6 +43,8 @@ interface AnalyticsSummary {
     reason: string;
     suggestedCourse: string | null;
   };
+  chapterWiseMarks: ChapterMark[];
+  userCourses: { id: number; title: string; chaptersCompleted: number; totalChapters: number }[];
 }
 
 export async function GET(req: NextRequest) {
@@ -171,6 +182,48 @@ export async function GET(req: NextRequest) {
       userCourses
     );
 
+    // Build chapter-wise marks data - sorted by completion date
+    const chapterWiseMarks: ChapterMark[] = (userProgress || [])
+      .filter(p => p.is_completed && p.chapter_score !== null && p.chapter_score !== undefined)
+      .map(p => {
+        const course = coursesMap.get(p.course_id);
+        return {
+          chapterIndex: p.chapter_index,
+          chapterName: p.chapter_name || `Chapter ${p.chapter_index + 1}`,
+          score: p.chapter_score ?? 0,
+          courseName: course?.name || course?.title || 'Unknown Course',
+          courseId: p.course_id,
+          completedAt: p.completed_at || p.created_at,
+        };
+      })
+      .sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime());
+
+    // Build user courses list with progress info
+    const userCoursesWithProgress = userCourses.map(course => {
+      const courseProgress = userProgress?.filter(p => p.course_id === course.id) || [];
+      const chaptersCompleted = courseProgress.filter(p => p.is_completed).length;
+      
+      // Parse courseJson to get total chapters
+      let totalChapters = course.noOfChapters || 0;
+      try {
+        const courseData = typeof course.coursejson === 'string' 
+          ? JSON.parse(course.coursejson) 
+          : course.coursejson;
+        if (courseData?.chapters?.length) {
+          totalChapters = courseData.chapters.length;
+        }
+      } catch (e) {
+        console.log('Error parsing courseJson for course:', course.id);
+      }
+      
+      return {
+        id: course.id,
+        title: course.name || course.title || 'Untitled Course',
+        chaptersCompleted,
+        totalChapters,
+      };
+    });
+
     const analytics: AnalyticsSummary = {
       currentStatus: {
         level,
@@ -187,6 +240,8 @@ export async function GET(req: NextRequest) {
       },
       engagementSummary,
       recommendation,
+      chapterWiseMarks,
+      userCourses: userCoursesWithProgress,
     };
 
     console.log('Analytics response:', JSON.stringify(analytics, null, 2));
