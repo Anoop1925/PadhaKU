@@ -44,7 +44,7 @@ generation_config = {
     "max_output_tokens": 8192,
 }
 
-model = genai.GenerativeModel('gemini-2.5-flash', generation_config=generation_config)
+model = genai.GenerativeModel('gemini-2.5-flash-lite', generation_config=generation_config)
 
 def clean_transcript_text(text):
     """Strips music cues and filler words, then truncates."""
@@ -123,7 +123,7 @@ def root():
 @app.route('/health')
 def health():
     """Health check endpoint"""
-    return jsonify({"status": "healthy", "model": "gemini-2.5-flash"})
+    return jsonify({"status": "healthy", "model": "gemini-2.5-flash-lite"})
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -165,83 +165,47 @@ def generate():
         print(f"  Title: {video_title}")
         print(f"  Description length: {len(video_description)} chars")
         
-        # Try to get transcripts using multiple methods
+        # Fetch transcript using youtube-transcript-api v1.2.3
         print(f"[INFO] Fetching transcript for video ID: {video_id}")
         transcript_text = ""
         
-        # Method 1: Try youtube-transcript-api with list_transcripts (most reliable)
         try:
-            print("[INFO] Method 1: Using youtube-transcript-api with list_transcripts...")
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            print("[INFO] Using youtube-transcript-api v1.2.3...")
+            api = YouTubeTranscriptApi()
             
-            # Try to get English transcript (manual or auto-generated)
+            # List available transcripts
+            transcript_list = api.list(video_id)
+            
+            # Try to get English transcript first
             transcript = None
             try:
-                # First try manually created transcripts
-                transcript = transcript_list.find_manually_created_transcript(['en', 'en-US', 'en-GB'])
-                print(f"[SUCCESS] Found manually created English transcript")
+                transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
+                print(f"[SUCCESS] Found English transcript ({transcript.language})")
             except:
-                try:
-                    # Fall back to auto-generated
-                    transcript = transcript_list.find_generated_transcript(['en', 'en-US', 'en-GB'])
-                    print(f"[SUCCESS] Found auto-generated English transcript")
-                except:
-                    print("[WARN] No English transcript found, trying first available...")
-                    # Try to get any available transcript
-                    for t in transcript_list:
-                        transcript = t
-                        print(f"[INFO] Using {t.language} transcript as fallback")
-                        break
+                # Fall back to first available transcript
+                print("[WARN] No English transcript, using first available...")
+                for t in transcript_list:
+                    transcript = t
+                    print(f"[INFO] Using {t.language} transcript")
+                    break
             
             if transcript:
+                # Fetch transcript data
                 transcript_data = transcript.fetch()
-                transcript_text = " ".join([segment['text'] for segment in transcript_data])
-                print(f"[SUCCESS] Method 1 worked! Got {len(transcript_text)} chars via youtube-transcript-api")
-        
-        except Exception as method1_error:
-            print(f"[WARN] Method 1 failed: {str(method1_error)}")
-            
-            # Method 2: Try direct get_transcript
-            try:
-                print("[INFO] Method 2: Trying direct get_transcript...")
-                transcript_data = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
-                transcript_text = " ".join([segment['text'] for segment in transcript_data])
-                print(f"[SUCCESS] Method 2 worked! Got {len(transcript_text)} chars")
-            except Exception as method2_error:
-                print(f"[WARN] Method 2 failed: {str(method2_error)}")
+                transcript_text = " ".join([entry['text'] for entry in transcript_data])
+                print(f"[SUCCESS] Fetched transcript: {len(transcript_data)} segments, {len(transcript_text)} chars")
+            else:
+                print("[WARN] No transcripts available for this video")
                 
-                # Method 3: Check via YouTube Data API if captions exist
-                try:
-                    print("[INFO] Method 3: Checking captions via YouTube Data API...")
-                    captions_response = youtube.captions().list(
-                        part='snippet',
-                        videoId=video_id
-                    ).execute()
-                    
-                    if captions_response.get('items'):
-                        caption_tracks = captions_response['items']
-                        print(f"[INFO] Found {len(caption_tracks)} caption tracks via API")
-                        
-                        # Try one more time with youtube-transcript-api now that we know captions exist
-                        try:
-                            print("[INFO] Retrying youtube-transcript-api...")
-                            transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
-                            transcript_text = " ".join([segment['text'] for segment in transcript_data])
-                            print(f"[SUCCESS] Method 3 retry worked! Got {len(transcript_text)} chars")
-                        except Exception as retry_error:
-                            print(f"[WARN] Retry failed: {str(retry_error)}")
-                        
-                        # Method 4: Try direct TimedText API (no OAuth needed)
-                        print("[INFO] Method 4: Trying direct TimedText API...")
-                        transcript_text = fetch_captions_via_timedtext(video_id)
-                        if transcript_text:
-                            print(f"[SUCCESS] Method 4 worked! Got {len(transcript_text)} chars via TimedText")
-                        else:
-                            print("[INFO] Method 4: TimedText API also failed")
-                        print("[INFO] No captions available via YouTube Data API")
-                        
-                except Exception as method3_error:
-                    print(f"[WARN] Method 3 failed: {str(method3_error)}")
+        except Exception as e:
+            print(f"[ERROR] Failed to fetch transcript: {str(e)}")
+            # Try TimedText API as fallback
+            print("[INFO] Trying TimedText API as fallback...")
+            transcript_text = fetch_captions_via_timedtext(video_id)
+            if transcript_text:
+                print(f"[SUCCESS] Got {len(transcript_text)} chars via TimedText API")
+            else:
+                print("[WARN] All transcript methods failed")
         
         # Combine all information
         content_parts = [
@@ -269,33 +233,27 @@ def generate():
         print("="*60 + "\n")
 
         prompt = f"""
-ACT AS: A Senior Creative Developer & Educator.
-GOAL: Create a "Living Playground" HTML file based on the YouTube video information below.
+Create an interactive visual simulation based on this YouTube video:
 
 {combined_content}
 
-INSTRUCTIONS:
-- Analyze the video title, description, and transcript (if available) to understand the core topic
-- Focus on the main educational concepts mentioned in the transcript and description
-- Use relevant information from the description to add context and depth to the playground
-- If transcript is not available, create a comprehensive playground based on the title and description
+TASK: Build a single-page HTML playground with interactive visualizations.
 
-ENGINE SELECTION RULES (Logic based on Topic):
-1. IF MATH/PHYSICS: Use Chart.js or HTML5 Canvas. Create "What-if" sliders. If it's Linear Regression, let me drag data points and watch the line of best fit recalculate in real-time.
-2. IF BIOLOGY/CHEMISTRY: Create a visual simulation. If it's about cells, show an interactive cell where clicking parts (Mitochondria, etc.) triggers animations and deep-dive info.
-3. IF SPACE/ENGINEERING: Build a 2D simulation (e.g., gravity orbits or rocket thrust mechanics) using a physics loop.
-4. IF GENERAL KNOWLEDGE: Build a "Branching Discovery Map" or a complex interactive quiz with "Levels" and visual progress.
+VISUALIZATION RULES:
+• MATH/PHYSICS: Interactive graphs with draggable elements, real-time calculations (Chart.js/Canvas)
+• BIOLOGY/CHEMISTRY: Clickable diagrams with animations and detailed labels
+• SPACE/ENGINEERING: 2D physics simulations with controllable parameters
+• OTHER TOPICS: Interactive quizzes, branching maps, or concept explorers
 
-UI/UX STANDARDS:
-- Use Tailwind CSS for a premium "Apple-style" glassmorphism UI.
-- Everything must be on ONE PAGE (HTML/CSS/JS).
-- Include a "Reset Simulation" button.
-- Make it "Juicy": add hover effects, smooth transitions, and distinct colors.
-- NO MARKDOWN (Do not use ```html). Output pure code.
-- Add a title at the top showing what the playground is about
+REQUIREMENTS:
+• Use Tailwind CSS for modern glassmorphism UI
+• Include interactive controls (sliders, buttons, drag elements)
+• Add reset button and smooth transitions
+• Make it educational and accurate to video content
+• Output pure HTML/CSS/JS (no markdown, no ```html tags)
+• Add clear title showing the topic
 
-TECHNICAL REQUIREMENT:
-Create an engaging, interactive learning experience based on the video content. Handle different scenarios and use cases related to the topic. Make it educational, accurate, and fun!
+Focus on creating visual, hands-on learning experiences that directly relate to the video's core concepts.
 """
 
         print("[INFO] Sending prompt to Gemini 2.5 Flash...")

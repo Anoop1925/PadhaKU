@@ -29,15 +29,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# API KEY ROTATION SYSTEM - Multiple keys with automatic failover
-DRAWINAIR_API_KEYS = [
-    os.getenv('DRAWINAIR_API_KEY'),
-    os.getenv('DRAWINAIR_API_KEY_2'),
-    os.getenv('DRAWINAIR_API_KEY_3'),
-    os.getenv('DRAWINAIR_API_KEY_4'),
-    os.getenv('DRAWINAIR_API_KEY_5'),
-    os.getenv('DRAWINAIR_API_KEY_6'),
-]
+# API KEY CONFIGURATION - Gemini for all features
+DRAWINAIR_API_KEY = os.getenv('DRAWINAIR_API_KEY')
 IMAGE_READER_API_KEYS = [
     os.getenv('IMAGE_READER_API_KEY'),
     os.getenv('IMAGE_READER_API_KEY_2'),
@@ -50,21 +43,19 @@ PLOT_CRAFTER_API_KEYS = [
 ]
 
 # Filter out None values (keys not set in .env)
-DRAWINAIR_API_KEYS = [k for k in DRAWINAIR_API_KEYS if k]
 IMAGE_READER_API_KEYS = [k for k in IMAGE_READER_API_KEYS if k]
 PLOT_CRAFTER_API_KEYS = [k for k in PLOT_CRAFTER_API_KEYS if k]
 
-# Track current key index for each feature
-current_drawinair_key_idx = 0
+# Track current key index for Gemini features (Image Reader and Plot Crafter)
 current_image_reader_key_idx = 0
 current_plot_crafter_key_idx = 0
 
-if not DRAWINAIR_API_KEYS or not IMAGE_READER_API_KEYS or not PLOT_CRAFTER_API_KEYS:
-    raise ValueError("At least one API key required for each feature. Add keys to .env file.")
+if not DRAWINAIR_API_KEY or not IMAGE_READER_API_KEYS or not PLOT_CRAFTER_API_KEYS:
+    raise ValueError("API keys required for all features. Add keys to .env file.")
 
-print(f"✅ Loaded {len(DRAWINAIR_API_KEYS)} DrawInAir API keys")
-print(f"✅ Loaded {len(IMAGE_READER_API_KEYS)} Image Reader API keys")
-print(f"✅ Loaded {len(PLOT_CRAFTER_API_KEYS)} Plot Crafter API keys")
+print(f"✅ Loaded Gemini API key for DrawInAir")
+print(f"✅ Loaded {len(IMAGE_READER_API_KEYS)} Image Reader API keys (Gemini)")
+print(f"✅ Loaded {len(PLOT_CRAFTER_API_KEYS)} Plot Crafter API keys (Gemini)")
 
 # Global variables for DrawInAir
 camera = None
@@ -83,17 +74,14 @@ LOCK_THRESHOLD = 3  # Frames needed to lock into a gesture
 UNLOCK_THRESHOLD = 3  # Frames needed to unlock (REDUCED from 10 for instant response)
 INTENTIONAL_SWITCH_THRESHOLD = 2  # Quick switch for intentional gesture changes
 
-def get_next_api_key(feature='drawinair'):
+def get_next_api_key(feature='image_reader'):
     """
-    Get next API key with automatic rotation on exhaustion
+    Get next API key with automatic rotation on exhaustion (for Gemini features only)
     Returns: (api_key, key_index) tuple
     """
-    global current_drawinair_key_idx, current_image_reader_key_idx, current_plot_crafter_key_idx
+    global current_image_reader_key_idx, current_plot_crafter_key_idx
     
-    if feature == 'drawinair':
-        keys = DRAWINAIR_API_KEYS
-        idx = current_drawinair_key_idx
-    elif feature == 'image_reader':
+    if feature == 'image_reader':
         keys = IMAGE_READER_API_KEYS
         idx = current_image_reader_key_idx
     elif feature == 'plot_crafter':
@@ -104,16 +92,13 @@ def get_next_api_key(feature='drawinair'):
     
     return keys[idx % len(keys)], idx
 
-def rotate_api_key(feature='drawinair'):
+def rotate_api_key(feature='image_reader'):
     """
-    Rotate to next API key when current one is exhausted
+    Rotate to next API key when current one is exhausted (for Gemini features only)
     """
-    global current_drawinair_key_idx, current_image_reader_key_idx, current_plot_crafter_key_idx
+    global current_image_reader_key_idx, current_plot_crafter_key_idx
     
-    if feature == 'drawinair':
-        current_drawinair_key_idx = (current_drawinair_key_idx + 1) % len(DRAWINAIR_API_KEYS)
-        print(f"🔄 Rotated DrawInAir API key to index {current_drawinair_key_idx}")
-    elif feature == 'image_reader':
+    if feature == 'image_reader':
         current_image_reader_key_idx = (current_image_reader_key_idx + 1) % len(IMAGE_READER_API_KEYS)
         print(f"🔄 Rotated Image Reader API key to index {current_image_reader_key_idx}")
     elif feature == 'plot_crafter':
@@ -702,18 +687,15 @@ def analyze_drawing():
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         pil_image = Image.fromarray(img_rgb)
         
-        # Try with current API key, rotate on failure
-        max_retries = len(DRAWINAIR_API_KEYS)
-        for attempt in range(max_retries):
-            try:
-                api_key, key_idx = get_next_api_key('drawinair')
-                genai.configure(api_key=api_key)
-                
-                print(f"🔑 Using DrawInAir API key #{key_idx + 1}")
-                
-                # Analyze with Gemini 2.5 Flash Lite
-                model = genai.GenerativeModel(model_name='gemini-2.5-flash-lite')
-                prompt = """Analyze the image and provide the following:
+        try:
+            # Configure Gemini API
+            genai.configure(api_key=DRAWINAIR_API_KEY)
+            
+            print(f"🔑 Using Gemini 2.5 Flash Lite for DrawInAir vision analysis")
+            
+            # Analyze with Gemini 2.5 Flash Lite
+            model = genai.GenerativeModel(model_name='gemini-2.5-flash-lite')
+            prompt = """Analyze the image and provide the following:
 * If a mathematical equation is present:
    - The equation represented in the image.
    - The solution to the equation.
@@ -721,41 +703,29 @@ def analyze_drawing():
 * If a drawing is present and no equation is detected:
    - A brief description of the drawn image in simple terms.
 * If only a single text is present in the image, then just return the text only show the text only."""
-                
-                response = model.generate_content([prompt, pil_image])
-                analysis_result = response.text
-                
-                return jsonify({
-                    'success': True,
-                    'result': analysis_result,
-                    'api_key_used': key_idx + 1
-                })
-                
-            except Exception as e:
-                error_msg = str(e).lower()
-                
-                # Check if it's a quota/rate limit error
-                if 'quota' in error_msg or 'rate' in error_msg or 'limit' in error_msg or 'exhausted' in error_msg:
-                    print(f"⚠️ API key #{key_idx + 1} exhausted: {e}")
-                    rotate_api_key('drawinair')
+            
+            response = model.generate_content([prompt, pil_image])
+            analysis_result = response.text
+            
+            return jsonify({
+                'success': True,
+                'result': analysis_result,
+                'model_used': 'Gemini 2.5 Flash Lite'
+            })
+            
+        except Exception as e:
+            print(f"❌ Gemini API error: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Analysis failed: {str(e)}'
+            }), 500
                     
-                    if attempt < max_retries - 1:
-                        print(f"🔄 Retrying with next API key...")
-                        continue
-                    else:
-                        return jsonify({
-                            'success': False,
-                            'error': 'All API keys exhausted. Please try again later.'
-                        }), 429
-                else:
-                    # Not a quota error, return immediately
-                    raise e
-        
     except Exception as e:
-        print(f"Analysis error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"❌ Error in analyze endpoint: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/drawinair/clear', methods=['POST'])
 def clear_canvas():

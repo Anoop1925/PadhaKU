@@ -9,8 +9,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Sparkles, Info, Brain, Hand, CheckCircle2, Lightbulb, Target, TrendingUp, Camera, Video, BookOpen, Zap } from "lucide-react";
 
-// Gemini API Key from environment variable
-const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_QUIZ_GENERATION_API_KEY || "";
+// Groq API Key from environment variable
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY || "";
 
 // Types
 interface QuizQuestion {
@@ -419,26 +419,38 @@ Return ONLY the JSON array, no other text.`;
 
   return retryWithBackoff(async () => {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": GOOGLE_API_KEY,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert quiz generator. You generate educational quizzes in valid JSON format only. Never include markdown formatting or explanations, just pure JSON."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
         }),
       }
     );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`Groq API error: ${errorData.error?.message || response.statusText}`);
     }
 
     const result = await response.json();
-    let text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    let text = result.choices?.[0]?.message?.content || "";
     
     // Remove markdown code blocks if present
     text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
@@ -467,7 +479,7 @@ Return ONLY the JSON array, no other text.`;
     } catch (error) {
       console.error("Failed to parse:", text);
       console.error("Parse error:", error);
-      throw new Error("Failed to parse quiz questions from Gemini API. Please try again.");
+      throw new Error("Failed to parse quiz questions from Groq API. Please try again.");
     }
   });
 }
@@ -486,27 +498,38 @@ async function fetchReport(
   
   return retryWithBackoff(async () => {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": GOOGLE_API_KEY,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert educational assessment analyst. Generate personalized, constructive quiz reports with detailed feedback."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 2000,
         }),
       }
     );
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`Groq API error: ${errorData.error?.message || response.statusText}`);
     }
     
     const result = await response.json();
-    const text =
-      result.candidates?.[0]?.content?.parts?.[0]?.text || "No report generated.";
+    const text = result.choices?.[0]?.message?.content || "No report generated.";
     return { summary: text, score };
   });
 }

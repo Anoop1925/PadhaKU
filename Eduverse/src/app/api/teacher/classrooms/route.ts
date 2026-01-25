@@ -105,8 +105,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Course created successfully:', course.id);
-    return NextResponse.json({ course });
+    console.log('Course created successfully:', course.id, 'State:', course.courseState);
+    
+    // Check if manual activation is required
+    if (course.requiresManualActivation) {
+      return NextResponse.json({ 
+        course,
+        requiresManualActivation: true,
+        message: 'Course created! Please click the activation link to activate it in Google Classroom.',
+        activationUrl: course.activationUrl
+      });
+    }
+    
+    // Return success with activation status
+    return NextResponse.json({ 
+      course,
+      message: course.courseState === 'ACTIVE' 
+        ? 'Course created and activated successfully!' 
+        : 'Course created successfully!',
+      requiresActivation: false
+    });
   } catch (error) {
     console.error('Error creating classroom (full error):', error);
     

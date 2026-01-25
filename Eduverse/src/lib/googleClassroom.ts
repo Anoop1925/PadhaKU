@@ -18,6 +18,8 @@ export interface ClassroomCourse {
   courseGroupEmail?: string;
   guardiansEnabled?: boolean;
   calendarId?: string;
+  requiresManualActivation?: boolean;
+  activationUrl?: string;
 }
 
 export interface Student {
@@ -424,8 +426,8 @@ export async function createCourse(
   try {
     console.log('Attempting to create course:', courseData);
     
-    // Try without specifying courseState first (let Google decide)
-    const response = await fetch(`${BASE_URL}/courses`, {
+    // Step 1: Create the course (will be in PROVISIONED state for most accounts)
+    const createResponse = await fetch(`${BASE_URL}/courses`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -437,36 +439,144 @@ export async function createCourse(
         descriptionHeading: courseData.description,
         room: courseData.room,
         ownerId: 'me',
-        // Removed courseState - will use default PROVISIONED state
+        courseState: 'ACTIVE', // Try to create as ACTIVE directly
       }),
     });
 
-    console.log('Course creation response status:', response.status);
+    console.log('Course creation response status:', createResponse.status);
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (!createResponse.ok) {
+      const error = await createResponse.json();
       console.error('Google Classroom API error:', error);
       
-      // Provide more helpful error messages
-      if (error.error?.code === 403) {
-        if (error.error?.message?.includes('CourseStateDenied')) {
-          throw new Error('Your Google account does not have permission to create courses. Please use a Google Workspace for Education account or create the course manually in Google Classroom and it will appear here.');
-        }
-        throw new Error('Permission denied. You may need to use a Google Workspace for Education account.');
+      // If ACTIVE state is denied, try with PROVISIONED and then activate
+      if (error.error?.code === 403 && error.error?.message?.includes('CourseStateDenied')) {
+        console.log('ACTIVE state denied, creating as PROVISIONED and then activating...');
+        return await createAndActivateCourse(accessToken, courseData);
       }
       
-      throw new Error(`Failed to create course: ${error.error?.message || response.statusText}`);
+      // Other permission errors
+      if (error.error?.code === 403) {
+        throw new Error('Permission denied. You may need to use a Google Workspace for Education account or check your Google Classroom admin settings.');
+      }
+      
+      throw new Error(`Failed to create course: ${error.error?.message || createResponse.statusText}`);
     }
 
-    const course = await response.json();
+    const course = await createResponse.json();
     console.log('Course created successfully:', course);
+    
+    // If course is PROVISIONED, try to activate it
+    if (course.courseState === 'PROVISIONED') {
+      console.log('Course is PROVISIONED, attempting to activate...');
+      return await activateCourse(accessToken, course.id) || course;
+    }
+    
     return course;
   } catch (error) {
     console.error('Error creating course:', error);
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Helper: Create course as PROVISIONED and then activate it
+ */
+async function createAndActivateCourse(
+  accessToken: string,
+  courseData: {
+    name: string;
+    section?: string;
+    description?: string;
+    room?: string;
+  }
+): Promise<ClassroomCourse | null> {
+  try {
+    // Create without specifying state (defaults to PROVISIONED)
+    const createResponse = await fetch(`${BASE_URL}/courses`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: courseData.name,
+        section: courseData.section,
+        descriptionHeading: courseData.description,
+        room: courseData.room,
+        ownerId: 'me',
+      }),
+    });
+
+    if (!createResponse.ok) {
+      const error = await createResponse.json();
+      throw new Error(`Failed to create course: ${error.error?.message || createResponse.statusText}`);
     }
-    throw error; // Re-throw to propagate the detailed error message
+
+    const course = await createResponse.json();
+    console.log('Course created as PROVISIONED:', course.id);
+    
+    // Now activate it
+    const activatedCourse = await activateCourse(accessToken, course.id);
+    
+    // If activation failed, add helper info to the course object
+    if (!activatedCourse && course.courseState === 'PROVISIONED') {
+      return {
+        ...course,
+        requiresManualActivation: true,
+        activationUrl: course.alternateLink || `https://classroom.google.com/c/${course.id}`
+      };
+    }
+    
+    return activatedCourse || course;
+  } catch (error) {
+    console.error('Error in createAndActivateCourse:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper: Activate a PROVISIONED course
+ */
+async function activateCourse(
+  accessToken: string,
+  courseId: string
+): Promise<ClassroomCourse | null> {
+  try {
+    console.log(`Activating course ${courseId}...`);
+    
+    const updateResponse = await fetch(`${BASE_URL}/courses/${courseId}?updateMask=courseState`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: courseId,
+        courseState: 'ACTIVE',
+      }),
+    });
+
+    if (!updateResponse.ok) {
+      const error = await updateResponse.json();
+      console.error('Failed to activate course:', error);
+      
+      // If activation fails, it's not critical - the course exists
+      if (error.error?.code === 403) {
+        console.warn('Course created but requires manual activation in Google Classroom');
+        return null; // Return null to indicate activation failed but course exists
+      }
+      
+      throw new Error(`Failed to activate course: ${error.error?.message}`);
+    }
+
+    const activatedCourse = await updateResponse.json();
+    console.log('Course activated successfully:', activatedCourse.id);
+    return activatedCourse;
+  } catch (error) {
+    console.error('Error activating course:', error);
+    // Don't throw - course was created, just needs manual activation
+    return null;
   }
 }
 
@@ -482,6 +592,7 @@ export async function createCourseWork(
     dueDate?: Date;
     maxPoints?: number;
     workType?: 'ASSIGNMENT' | 'SHORT_ANSWER_QUESTION' | 'MULTIPLE_CHOICE_QUESTION';
+    materials?: any[];
   }
 ): Promise<CourseWork | null> {
   try {
@@ -492,6 +603,10 @@ export async function createCourseWork(
       state: 'PUBLISHED',
       maxPoints: workData.maxPoints,
     };
+
+    if (workData.materials && workData.materials.length > 0) {
+      body.materials = workData.materials;
+    }
 
     if (workData.dueDate) {
       body.dueDate = {

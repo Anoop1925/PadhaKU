@@ -7,7 +7,7 @@ const BASE_URL = 'https://classroom.googleapis.com/v1';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const courseId = params.id;
+    const { id: courseId } = await params;
     const body = await request.json();
     const { text, materials } = body;
 
@@ -32,13 +32,23 @@ export async function POST(
       },
       body: JSON.stringify({
         text,
-        materials: materials || [],
+        materials: materials && materials.length > 0 ? materials : undefined,
         state: 'PUBLISHED',
       }),
     });
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('Google Classroom API error:', error);
+      
+      // Check for permission error
+      if (error.error?.message?.includes('permission') || error.error?.status === 'PERMISSION_DENIED') {
+        return NextResponse.json(
+          { error: 'You need teacher permissions for this classroom. Please sign out and sign in again to update permissions.' },
+          { status: 403 }
+        );
+      }
+      
       throw new Error(error.error?.message || 'Failed to create announcement');
     }
 

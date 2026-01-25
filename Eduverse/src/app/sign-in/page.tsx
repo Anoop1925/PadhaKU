@@ -3,10 +3,10 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, BookOpen, ArrowRight, Users } from "lucide-react";
+import { GraduationCap, BookOpen, ArrowRight, Users, Shield } from "lucide-react";
 import SharedNavbar from "@/components/SharedNavbar";
 
-type UserType = 'student' | 'teacher';
+type UserType = 'student' | 'teacher' | 'parent';
 
 export default function SignInPage() {
   const [isDark, setIsDark] = useState(false);
@@ -14,7 +14,11 @@ export default function SignInPage() {
 
   const handleGoogleAuth = async (userType: UserType) => {
     await signIn("google", {
-      callbackUrl: userType === 'teacher' ? "/teacher/dashboard" : "/dashboard",
+      callbackUrl: userType === 'teacher' 
+        ? "/teacher/dashboard" 
+        : userType === 'parent'
+        ? "/parent/access-key"
+        : "/dashboard",
       // Pass user type as state to identify during callback
     });
   };
@@ -218,6 +222,64 @@ export default function SignInPage() {
                 </div>
               </motion.div>
 
+            </div>
+
+            {/* PARENT SECTION - BELOW */}
+            <div className="border-t border-white/20">
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                className="p-8 md:p-12 relative group"
+              >
+                {/* GLOW EFFECT */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-6">
+                    {/* ICON */}
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 flex-shrink-0">
+                      <Shield className="w-10 h-10 text-white" />
+                    </div>
+
+                    {/* TITLE & DESCRIPTION */}
+                    <div>
+                      <h2 className="text-2xl font-bold text-white mb-2">Parent Portal</h2>
+                      <p className="text-gray-300">View your child's progress and learning analytics</p>
+                      <div className="flex items-center gap-4 mt-3 text-sm text-gray-200">
+                        <span className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                          Read-only access
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-teal-400" />
+                          Secure passkey required
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SIGN IN BUTTON */}
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoogleAuth('parent');
+                    }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex-shrink-0 flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-4 px-8 rounded-2xl shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 font-semibold group/btn"
+                  >
+                    <svg className="w-6 h-6" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#EA4335" d="M24 9.5c3.15 0 5.75 1.1 7.66 2.89l5.7-5.7C33.39 3.21 28.98 1.5 24 1.5 14.84 1.5 7.19 7.84 4.68 16.26l6.95 5.4C13.29 14.75 18.19 9.5 24 9.5z"/>
+                      <path fill="#34A853" d="M43.63 20.26H24v7.5h11.4c-1.34 3.58-4.39 6.44-8.4 7.5l6.95 5.4C40.81 36.16 44 30.07 44 24c0-.97-.1-1.92-.27-2.84l-.1-.9z"/>
+                      <path fill="#FBBC05" d="M10.38 28.84C9.42 26.65 9 24.38 9 22c0-2.38.42-4.65 1.38-6.84L3.43 9.76C1.26 13.1 0 17.42 0 22s1.26 8.9 3.43 12.24l6.95-5.4z"/>
+                      <path fill="#4285F4" d="M24 44.5c6.56 0 12.08-2.16 16.1-5.86l-6.95-5.4c-2.13 1.43-4.86 2.26-8.15 2.26-5.81 0-10.71-5.25-12.37-12.16l-6.95 5.4C7.19 40.16 14.84 44.5 24 44.5z"/>
+                    </svg>
+                    <span className="flex items-center gap-2">
+                      Sign in as Parent
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </span>
+                  </motion.button>
+                </div>
+              </motion.div>
             </div>
           </div>
         </motion.div>
