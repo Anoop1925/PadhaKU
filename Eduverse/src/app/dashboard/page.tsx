@@ -237,7 +237,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-[#fafbfc]">
       {/* Top Bar */}
-      <div className="px-10 py-8 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-3xl mx-8 mt-6">
+      <div className="px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-3xl mx-6 mt-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 rounded-2xl bg-white/90 flex items-center justify-center backdrop-blur-sm">
@@ -266,9 +266,9 @@ export default function Dashboard() {
         </div>
       </div>
       {/* Main Content */}
-      <div className="flex-1 px-8 py-8 overflow-y-auto">
+      <div className="flex-1 px-6 py-6 overflow-y-auto">
         {/* KPI Cards Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Total Classes KPI */}
           <div className="p-5 rounded-2xl bg-[#c8d9f5] border-t-[3px] border-t-[#444fd6] hover:translate-y-[-2px] transition-all">
             <div className="flex items-center justify-between">
@@ -325,10 +325,10 @@ export default function Dashboard() {
         </div>
 
         {/* Monthly Calendar & Profile Row */}
-        <div id="calendar-section" className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div id="calendar-section" className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Monthly Calendar */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[#d0dffc] flex items-center justify-center">
                   <CalendarIcon className="w-5 h-5 text-[#444fd6]" />
@@ -433,11 +433,11 @@ export default function Dashboard() {
           </div>
 
           {/* Profile / Event Details Card */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col h-full shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col h-full shadow-sm">
             {!selectedDay ? (
               <>
                 {/* Profile View */}
-                <div className="flex items-center gap-2 mb-5">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                     <User className="w-5 h-5 text-[#387BFF]" />
                   </div>
@@ -466,7 +466,7 @@ export default function Dashboard() {
                   </div>
                   
                   {/* User Info - balanced */}
-                  <div className="text-center mb-4 pb-3 border-b border-slate-100 w-full">
+                  <div className="text-center mb-3 pb-2 border-b border-slate-100 w-full">
                     <div className="font-bold text-lg text-slate-800 mb-1">
                       {session?.user?.name || 'User'}
                     </div>
@@ -476,9 +476,9 @@ export default function Dashboard() {
                   </div>
 
                   {/* Stats List - Medium spacing */}
-                  <div className="w-full space-y-2">
+                  <div className="w-full space-y-1.5">
                     {/* Total Points */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-white hover:shadow-md transition-all duration-200 border border-emerald-100">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-emerald-50 to-white hover:shadow-md transition-all duration-200 border border-emerald-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md">
                           <GraduationCap className="w-5 h-5 text-white" />
@@ -491,7 +491,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Weekly Rank */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-purple-50 to-white hover:shadow-md transition-all duration-200 border border-purple-100">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-purple-50 to-white hover:shadow-md transition-all duration-200 border border-purple-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-md">
                           <Trophy className="w-5 h-5 text-white" />
@@ -504,7 +504,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Assignments Completed */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-orange-50 to-white hover:shadow-md transition-all duration-200 border border-orange-100">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-orange-50 to-white hover:shadow-md transition-all duration-200 border border-orange-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md">
                           <CheckCircle2 className="w-5 h-5 text-white" />
@@ -515,7 +515,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Chapters Completed */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-cyan-50 to-white hover:shadow-md transition-all duration-200 border border-cyan-100">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-cyan-50 to-white hover:shadow-md transition-all duration-200 border border-cyan-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center shadow-md">
                           <BookOpen className="w-5 h-5 text-white" />
@@ -528,7 +528,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Courses Completed */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-pink-50 to-white hover:shadow-md transition-all duration-200 border border-pink-100">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-pink-50 to-white hover:shadow-md transition-all duration-200 border border-pink-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center shadow-md">
                           <Hand className="w-5 h-5 text-white" />
@@ -543,7 +543,7 @@ export default function Dashboard() {
                 </div>
                 
                 {/* View Analytics Button */}
-                <div className="mt-3">
+                <div className="mt-2">
                   <button
                     onClick={() => router.push('/analytics')}
                     className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
@@ -553,7 +553,7 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-slate-200">
+                <div className="mt-2 pt-2 border-t border-slate-200">
                   <div className="text-center">
                     <div className="text-xs text-slate-500 mb-1">Today</div>
                     <div className="text-sm font-medium text-slate-700">{format(new Date(), 'EEEE, dd MMMM')}</div>
@@ -561,7 +561,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Hint to select day */}
-                <div className="mt-3 p-2.5 rounded-lg bg-[#d0dffc] border border-[#444fd6]/20">
+                <div className="mt-2 p-2 rounded-lg bg-[#d0dffc] border border-[#444fd6]/20">
                   <div className="flex items-center justify-center gap-2 text-xs text-slate-600">
                     <CalendarIcon className="w-4 h-4 text-[#444fd6]" />
                     <p>Select a day from the calendar to view events</p>
@@ -571,7 +571,7 @@ export default function Dashboard() {
             ) : (
               <>
                 {/* Event Details View */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-[#d0dffc] flex items-center justify-center">
                       <CalendarIcon className="w-5 h-5 text-[#444fd6]" />
@@ -695,10 +695,10 @@ export default function Dashboard() {
         </div>
 
         {/* Classes, Announcements, and Assignments Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Classes Container */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#c8f0dc] flex items-center justify-center">
                 <BookOpen className="w-5 h-5 text-[#10b981]" />
               </div>
@@ -737,8 +737,8 @@ export default function Dashboard() {
           </div>
 
           {/* Announcements Container */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#f5d0e0] flex items-center justify-center">
                 <Megaphone className="w-5 h-5 text-[#ec4899]" />
               </div>
@@ -780,8 +780,8 @@ export default function Dashboard() {
           </div>
 
           {/* Assignments Container */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-lg bg-[#e3d4f0] flex items-center justify-center">
                 <ClipboardList className="w-5 h-5 text-[#8b5cf6]" />
               </div>
