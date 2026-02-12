@@ -429,8 +429,41 @@ export default function Dashboard() {
                   </div>
                 );
               })}
-            </div>
-          </div>
+            </div>            
+            {/* Quick Stats Below Calendar */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <ClipboardList className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-medium text-slate-600">Total Tasks</span>
+                </div>
+                <div className="text-xl font-bold text-blue-600">{allAssignments.length}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs font-medium text-slate-600">Completed</span>
+                </div>
+                <div className="text-xl font-bold text-emerald-600">{assignmentsCompleted}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                  <span className="text-xs font-medium text-slate-600">Pending</span>
+                </div>
+                <div className="text-xl font-bold text-orange-600">{assignmentsPending}</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <BookOpen className="w-4 h-4 text-purple-600" />
+                  <span className="text-xs font-medium text-slate-600">Courses</span>
+                </div>
+                <div className="text-xl font-bold text-purple-600">{courses.length}</div>
+              </div>
+            </div>          </div>
 
           {/* Profile / Event Details Card */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col h-full shadow-sm">
@@ -470,9 +503,18 @@ export default function Dashboard() {
                     <div className="font-bold text-lg text-slate-800 mb-1">
                       {session?.user?.name || 'User'}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-500 mb-3">
                       {session?.user?.email || 'No email'}
                     </div>
+                    
+                    {/* View Analytics Button */}
+                    <button
+                      onClick={() => router.push('/analytics')}
+                      className="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 mt-2"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      View Analytics
+                    </button>
                   </div>
 
                   {/* Stats List - Medium spacing */}
@@ -540,17 +582,6 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                </div>
-                
-                {/* View Analytics Button */}
-                <div className="mt-2">
-                  <button
-                    onClick={() => router.push('/analytics')}
-                    className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    View Analytics
-                  </button>
                 </div>
 
                 <div className="mt-2 pt-2 border-t border-slate-200">
