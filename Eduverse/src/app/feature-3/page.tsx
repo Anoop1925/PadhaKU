@@ -9,8 +9,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Sparkles, Info, Brain, Hand, CheckCircle2, Lightbulb, Target, TrendingUp, Camera, Video, BookOpen, Zap } from "lucide-react";
 
-// Groq API Key from environment variable
-const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY || "";
+// Gemini API Key from environment variable
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 
 // Types
 interface QuizQuestion {
@@ -419,38 +419,33 @@ Return ONLY the JSON array, no other text.`;
 
   return retryWithBackoff(async () => {
     const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert quiz generator. You generate educational quizzes in valid JSON format only. Never include markdown formatting or explanations, just pure JSON."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
+          contents: [{
+            parts: [{
+              text: `You are an expert quiz generator. You generate educational quizzes in valid JSON format only. Never include markdown formatting or explanations, just pure JSON.\n\n${prompt}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2000,
+          }
         }),
       }
     );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Groq API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
     }
 
     const result = await response.json();
-    let text = result.choices?.[0]?.message?.content || "";
+    let text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
     // Remove markdown code blocks if present
     text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
@@ -479,7 +474,7 @@ Return ONLY the JSON array, no other text.`;
     } catch (error) {
       console.error("Failed to parse:", text);
       console.error("Parse error:", error);
-      throw new Error("Failed to parse quiz questions from Groq API. Please try again.");
+      throw new Error("Failed to parse quiz questions from Gemini API. Please try again.");
     }
   });
 }
@@ -498,38 +493,33 @@ async function fetchReport(
   
   return retryWithBackoff(async () => {
     const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert educational assessment analyst. Generate personalized, constructive quiz reports with detailed feedback."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.8,
-          max_tokens: 2000,
+          contents: [{
+            parts: [{
+              text: `You are an expert educational assessment analyst. Generate personalized, constructive quiz reports with detailed feedback.\n\n${prompt}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 2000,
+          }
         }),
       }
     );
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Groq API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
     }
     
     const result = await response.json();
-    const text = result.choices?.[0]?.message?.content || "No report generated.";
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "No report generated.";
     return { summary: text, score };
   });
 }

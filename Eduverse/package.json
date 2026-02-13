@@ -10,6 +10,7 @@
     "streamlit": "node start-streamlit.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@mediapipe/drawing_utils": "^0.3.1675466124",
     "@mediapipe/hands": "^0.4.1675469240",
     "@radix-ui/react-avatar": "^1.1.10",
